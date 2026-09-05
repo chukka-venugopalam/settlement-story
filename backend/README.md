@@ -53,3 +53,5 @@ Anything it doesn't recognize falls through to answering about the batch as-is. 
 ## Wiring in a real LLM narrator (optional, post-hackathon)
 
 `narrator.narrate_llm()` is stubbed with the exact contract to follow: pass only the pre-formatted, already-computed numbers into the prompt, instruct the model never to do arithmetic, and fall back to `narrate_template()` on any failure. The build spec recommends using Gemini directly since Antigravity already runs on it — one less API key to manage.
+
+<!-- Deployment trigger: reset database to clean 12 fixtures -->
