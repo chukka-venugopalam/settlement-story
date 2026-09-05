@@ -794,6 +794,102 @@
     color: var(--ink-primary);
   }
 
+  /* ---------- Plain-Language Info Tooltips ---------- */
+
+  .info-tip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: pointer;
+    vertical-align: middle;
+    margin-left: 5px;
+    outline: none;
+  }
+
+  .info-circle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1px solid rgba(118, 112, 107, 0.45);
+    color: var(--ink-muted);
+    font-size: 9.5px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 600;
+    line-height: 1;
+    background: #FAF8F5;
+    transition: all 0.15s ease;
+    user-select: none;
+  }
+
+  .info-tip:hover .info-circle,
+  .info-tip:focus .info-circle,
+  .info-tip.active .info-circle {
+    border-color: var(--brand-red);
+    color: #FFFFFF;
+    background: var(--brand-red);
+  }
+
+  .tip-box {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 0;
+    background: #1A1715;
+    color: #FFFFFF;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    line-height: 1.45;
+    white-space: normal;
+    width: 240px;
+    max-width: 80vw;
+    z-index: 1000;
+    pointer-events: none;
+    transition: opacity 0.15s ease, visibility 0.15s ease;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    text-transform: none;
+    letter-spacing: normal;
+  }
+
+  .tip-box::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 12px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #1A1715 transparent transparent transparent;
+  }
+
+  .info-tip:hover .tip-box,
+  .info-tip:focus .tip-box,
+  .info-tip.active .tip-box {
+    visibility: visible;
+    opacity: 1;
+  }
+
+  /* ---------- Extracted Intro Banner ---------- */
+
+  .extracted-intro-banner {
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--ink-muted);
+    background: #FAF8F5;
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    border-left: 3px solid var(--brand-red);
+  }
+
   /* ---------- View Switcher Tabs ---------- */
 
   .view-tabs {
@@ -931,6 +1027,23 @@
     color: var(--ink-primary);
   }
 
+  .compare-narration-text {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--ink-primary);
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--brand-red-border);
+  }
+
+  .band-rate {
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--ink-faint);
+    margin-left: 5px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
   .compare-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -991,6 +1104,9 @@
 
     <div id="batchRow" class="batch-row"></div>
 
+    <div id="extractedIntroBanner" class="extracted-intro-banner" style="display:none;">
+      A settlement statement shows how much of your sales actually reaches your bank account, after standard deductions.
+    </div>
     <div id="extractedFieldsCard" class="extracted-card" style="display:none;">
       <div class="extracted-header">
         <span class="extracted-title">📄 Extracted from Statement</span>
@@ -1059,6 +1175,7 @@
     <div id="compareNoteCard" class="compare-note-card" style="display:none;">
       <div class="compare-note-label">⚡ Biggest Driver</div>
       <div id="compareNoteText" class="compare-note-text"></div>
+      <div id="compareNarrationText" class="compare-narration-text" style="display:none;"></div>
     </div>
 
     <div id="compareGrid" class="compare-grid" style="display:none;">
@@ -1070,6 +1187,10 @@
         <div id="compareTitleB" class="compare-col-title">Settlement B</div>
         <div id="compareWaterfallB" class="waterfall-card compare-card"></div>
       </div>
+    </div>
+
+    <div class="compare-actions" style="margin-top: 16px; text-align: right;">
+      <button id="compareExportBtn" class="export-btn" style="display:none;">Export Comparison Summary</button>
     </div>
   </div>
 
@@ -1219,11 +1340,10 @@
     selectedBatchId = id;
     renderBatchRow();
     insightsCallout.style.display = 'none';
-    if (!id || !id.startsWith('pdf-')) {
-      extractedFieldsCard.style.display = 'none';
-    } else {
-      extractedFieldsCard.style.display = 'block';
-    }
+    const isPdf = id && id.startsWith('pdf-');
+    extractedFieldsCard.style.display = isPdf ? 'block' : 'none';
+    const introBanner = document.getElementById('extractedIntroBanner');
+    if (introBanner) introBanner.style.display = isPdf ? 'block' : 'none';
   }
 
   async function fetchInsights(batchId) {
@@ -1293,34 +1413,61 @@
     return `₹${n.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
   }
 
-  function renderWaterfall(inputs, result, isHypothetical, targetElement) {
+  function makeInfoTip(text) {
+    return `<span class="info-tip" tabindex="0" role="tooltip" aria-label="${text}"><span class="info-circle">i</span><span class="tip-box">${text}</span></span>`;
+  }
+
+  function renderWaterfall(inputs, result, isHypothetical, targetElement, isCompare) {
     const container = targetElement || waterfallCard;
     const gross = result.gross;
+    const isCompareMode = isCompare || (targetElement && targetElement !== waterfallCard);
     
     // Build formula strings only if inputs object is available
     const getFormula = (item) => {
       if (!inputs) return null;
       switch (item) {
+        case 'gross':
+          return `Total sales processed: ${inrFull(inputs.gross_amount || gross)}`;
         case 'gateway_fee':
-          return `${inputs.gross_amount.toLocaleString('en-IN')} × ${(inputs.gateway_fee_pct * 100).toFixed(1)}%`;
+          return `${(inputs.gross_amount || gross).toLocaleString('en-IN')} × ${(inputs.gateway_fee_pct * 100).toFixed(1)}%`;
         case 'gst_on_fee':
-          return `${result.gateway_fee.toFixed(2)} × ${(inputs.gst_on_fee_pct * 100).toFixed(1)}%`;
+          return `${result.gateway_fee.toFixed(2)} × ${(inputs.gst_on_fee_pct * 100).toFixed(0)}%`;
         case 'refunds':
-          return (inputs.refunds_amount !== undefined && inputs.refunds_amount !== null) ? `${inputs.refunds_amount.toFixed(2)}` : null;
+          return (inputs.refunds_amount !== undefined && inputs.refunds_amount !== null) ? `Customer refunds: ${inrFull(inputs.refunds_amount)}` : null;
         case 'reserve_held':
           const afterRefunds = result.gross - result.gateway_fee - result.gst_on_fee - result.refunds;
           return `${afterRefunds.toFixed(2)} × ${(inputs.chargebacks_reserve_pct * 100).toFixed(2).replace(/0$/, '')}%`;
+        case 'net_settled':
+          return `Gross (${inrFull(result.gross)}) − Fee (${inrFull(result.gateway_fee)}) − GST (${inrFull(result.gst_on_fee)}) − Refunds (${inrFull(result.refunds)}) − Reserve (${inrFull(result.reserve_held)})`;
         default:
           return null;
       }
     };
+
+    const getRateBadge = (key) => {
+      if (!isCompareMode || !inputs) return '';
+      switch (key) {
+        case 'gateway_fee':
+          return inputs.gateway_fee_pct != null ? `<span class="band-rate">(${(inputs.gateway_fee_pct * 100).toFixed(1)}%)</span>` : '';
+        case 'gst_on_fee':
+          return inputs.gst_on_fee_pct != null ? `<span class="band-rate">(${(inputs.gst_on_fee_pct * 100).toFixed(0)}%)</span>` : '';
+        case 'reserve_held':
+          return inputs.chargebacks_reserve_pct != null ? `<span class="band-rate">(${(inputs.chargebacks_reserve_pct * 100).toFixed(2).replace(/0$/, '')}%)</span>` : '';
+        case 'refunds':
+          return gross > 0 ? `<span class="band-rate">(${((Math.abs(result.refunds) / gross) * 100).toFixed(1)}%)</span>` : '';
+        case 'net_settled':
+          return gross > 0 ? `<span class="band-rate">(${((result.net_settled / gross) * 100).toFixed(1)}%)</span>` : '';
+        default:
+          return '';
+      }
+    };
     
     const rows = [
-      { label: 'Gross', value: gross, type: 'gross', key: 'gross' },
-      { label: 'Gateway fee', value: -result.gateway_fee, type: 'coral', key: 'gateway_fee' },
-      { label: 'GST on fee', value: -result.gst_on_fee, type: 'coral', key: 'gst_on_fee' },
-      { label: 'Refunds', value: -result.refunds, type: 'coral', key: 'refunds' },
-      { label: 'Reserve held', value: -result.reserve_held, type: 'coral', key: 'reserve_held' },
+      { label: 'Gross', tip: 'Total customer payments received before any gateway fees, taxes, or deductions.', value: gross, type: 'gross', key: 'gross' },
+      { label: 'Gateway fee', tip: 'The fee the payment processor charges for handling transactions — standard across online payments.', value: -result.gateway_fee, type: 'coral', key: 'gateway_fee' },
+      { label: 'GST on fee', tip: "India's 18% tax applied strictly to the gateway fee itself, not your total sale amount.", value: -result.gst_on_fee, type: 'coral', key: 'gst_on_fee' },
+      { label: 'Refunds', tip: 'Money returned to customers for cancelled or returned orders, deducted from your payout.', value: -result.refunds, type: 'coral', key: 'refunds' },
+      { label: 'Reserve held', tip: 'A temporary safety deposit held back by the processor to cover potential customer bank disputes.', value: -result.reserve_held, type: 'coral', key: 'reserve_held' },
     ];
 
     let html = '';
@@ -1336,12 +1483,14 @@
       const fillClass = isDeduction ? 'coral-fill' : 'gross-fill';
       const formula = getFormula(row.key);
       const bandClass = formula ? 'band-clickable' : '';
+      const rateBadge = getRateBadge(row.key);
+      const tipHtml = makeInfoTip(row.tip);
       
       html += `
         <div class="band animate ${bandClass}" style="animation-delay:${i * 130}ms" data-band-index="${i}">
           <div class="band-label-row">
-            <span class="band-label">${row.label}</span>
-            <span class="band-figure ${figureClass}">${sign}${inrFull(Math.abs(row.value))}</span>
+            <span class="band-label">${row.label} ${tipHtml}</span>
+            <span class="band-figure ${figureClass}">${sign}${inrFull(Math.abs(row.value))}${rateBadge}</span>
           </div>
           <div class="bar-track"><div class="bar-fill ${fillClass}" style="width:${widthPct}%"></div></div>
           ${formula ? `<div class="formula-row"><span class="formula-operator">=</span> ${formula}</div>` : ''}
@@ -1349,18 +1498,25 @@
     });
 
     const netWidthPct = Math.max(2, Math.min(100, (result.net_settled / gross) * 100));
+    const netRateBadge = getRateBadge('net_settled');
+    const netTipHtml = makeInfoTip('The final take-home amount deposited into your bank account after all fees, taxes, and reserves.');
+    const netFormula = getFormula('net_settled');
+    const netClass = netFormula ? 'band-clickable' : '';
+
     html += `
-      <div class="band net-band animate" style="animation-delay:${rows.length * 130}ms">
-        <div class="net-label">Net settled</div>
-        <div class="net-figure">${inrFull(result.net_settled)}</div>
+      <div class="band net-band animate ${netClass}" style="animation-delay:${rows.length * 130}ms">
+        <div class="net-label">Net settled ${netTipHtml}</div>
+        <div class="net-figure">${inrFull(result.net_settled)}${netRateBadge}</div>
         <div class="bar-track"><div class="bar-fill gold-fill" style="width:${netWidthPct}%"></div></div>
+        ${netFormula ? `<div class="formula-row"><span class="formula-operator">=</span> ${netFormula}</div>` : ''}
       </div>`;
 
     container.innerHTML = html;
     
     // Add click handlers for formula toggling
     container.querySelectorAll('.band-clickable').forEach(band => {
-      band.addEventListener('click', () => {
+      band.addEventListener('click', (e) => {
+        if (e.target.closest('.info-tip')) return;
         const formula = band.querySelector('.formula-row');
         if (formula) {
           formula.classList.toggle('visible');
@@ -1397,6 +1553,8 @@
     insightsCallout.style.display = 'none';
     if (!selectedBatchId || !selectedBatchId.startsWith('pdf-')) {
       extractedFieldsCard.style.display = 'none';
+      const introBanner = document.getElementById('extractedIntroBanner');
+      if (introBanner) introBanner.style.display = 'none';
     }
     askBtn.disabled = true;
     askBtn.textContent = 'Thinking...';
@@ -1505,11 +1663,15 @@
   const compareBtn = document.getElementById('compareBtn');
   const compareNoteCard = document.getElementById('compareNoteCard');
   const compareNoteText = document.getElementById('compareNoteText');
+  const compareNarrationText = document.getElementById('compareNarrationText');
+  const compareExportBtn = document.getElementById('compareExportBtn');
   const compareGrid = document.getElementById('compareGrid');
   const compareTitleA = document.getElementById('compareTitleA');
   const compareTitleB = document.getElementById('compareTitleB');
   const compareWaterfallA = document.getElementById('compareWaterfallA');
   const compareWaterfallB = document.getElementById('compareWaterfallB');
+
+  let lastCompareData = null;
 
   tabAsk.addEventListener('click', () => {
     tabAsk.classList.add('active');
@@ -1548,6 +1710,40 @@
     }
   }
 
+  function generateCompareExportText(dataA, dataB, note, narration) {
+    const inr = (n) => `₹${Math.abs(n).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+    const ratePct = (r, digits = 1) => (r !== undefined && r !== null) ? `${(r * 100).toFixed(digits)}%` : 'N/A';
+    
+    const lines = [
+      '# Settlement Story — Comparison Export',
+      '',
+      `Generated: ${new Date().toLocaleString()}`,
+      '',
+      '## Comparison Overview',
+      `Settlement A: ${dataA.id}`,
+      `Settlement B: ${dataB.id}`,
+      '',
+      `Primary Driver: ${note}`,
+      '',
+      'Explanation:',
+      narration || note,
+      '',
+      '## Side-by-Side Breakdown',
+      `Line Item               | Settlement A (${dataA.id}) | Settlement B (${dataB.id}) | Difference`,
+      '------------------------+---------------------------+---------------------------+----------------------',
+      `Gross Sales             | ${inr(dataA.waterfall.gross).padEnd(25)} | ${inr(dataB.waterfall.gross).padEnd(25)} | ${inr(Math.abs(dataA.waterfall.gross - dataB.waterfall.gross))}`,
+      `Gateway Fee             | ${('−' + inr(dataA.waterfall.gateway_fee) + ' (' + ratePct(dataA.inputs.gateway_fee_pct, 1) + ')').padEnd(25)} | ${('−' + inr(dataB.waterfall.gateway_fee) + ' (' + ratePct(dataB.inputs.gateway_fee_pct, 1) + ')').padEnd(25)} | ${inr(Math.abs(dataA.waterfall.gateway_fee - dataB.waterfall.gateway_fee))}`,
+      `GST on Fee              | ${('−' + inr(dataA.waterfall.gst_on_fee) + ' (' + ratePct(dataA.inputs.gst_on_fee_pct, 0) + ')').padEnd(25)} | ${('−' + inr(dataB.waterfall.gst_on_fee) + ' (' + ratePct(dataB.inputs.gst_on_fee_pct, 0) + ')').padEnd(25)} | ${inr(Math.abs(dataA.waterfall.gst_on_fee - dataB.waterfall.gst_on_fee))}`,
+      `Refunds                 | ${('−' + inr(dataA.waterfall.refunds)).padEnd(25)} | ${('−' + inr(dataB.waterfall.refunds)).padEnd(25)} | ${inr(Math.abs(dataA.waterfall.refunds - dataB.waterfall.refunds))}`,
+      `Reserve Held            | ${('−' + inr(dataA.waterfall.reserve_held) + ' (' + ratePct(dataA.inputs.chargebacks_reserve_pct, 2) + ')').padEnd(25)} | ${('−' + inr(dataB.waterfall.reserve_held) + ' (' + ratePct(dataB.inputs.chargebacks_reserve_pct, 2) + ')').padEnd(25)} | ${inr(Math.abs(dataA.waterfall.reserve_held - dataB.waterfall.reserve_held))}`,
+      '------------------------+---------------------------+---------------------------+----------------------',
+      `Net Settled             | ${inr(dataA.waterfall.net_settled).padEnd(25)} | ${inr(dataB.waterfall.net_settled).padEnd(25)} | ${inr(Math.abs(dataA.waterfall.net_settled - dataB.waterfall.net_settled))}`,
+      '',
+      'Every number verified by Settlement Story.'
+    ];
+    return lines.join('\n');
+  }
+
   async function runCompare() {
     const idA = compareSelectA.value;
     const idB = compareSelectB.value;
@@ -1557,14 +1753,22 @@
     compareBtn.textContent = 'Comparing...';
     renderWaterfallSkeleton(compareWaterfallA);
     renderWaterfallSkeleton(compareWaterfallB);
+    compareExportBtn.style.display = 'none';
 
     try {
       if (!offlineMode) {
         const res = await fetch(`${API_BASE}/compare?batch_id_a=${idA}&batch_id_b=${idB}`);
         if (!res.ok) throw new Error('Failed to fetch comparison');
         const data = await res.json();
+        lastCompareData = data;
         
         compareNoteText.textContent = data.comparison_note;
+        if (data.comparison_narration) {
+          compareNarrationText.textContent = data.comparison_narration;
+          compareNarrationText.style.display = 'block';
+        } else {
+          compareNarrationText.style.display = 'none';
+        }
         compareNoteCard.style.display = 'block';
 
         const labelA = batches.find(b => b.id === idA)?.label || idA;
@@ -1572,9 +1776,10 @@
         compareTitleA.textContent = `${idA}: ${labelA.split(' -- ')[0]}`;
         compareTitleB.textContent = `${idB}: ${labelB.split(' -- ')[0]}`;
 
-        renderWaterfall(data.batch_a.inputs, data.batch_a.waterfall, false, compareWaterfallA);
-        renderWaterfall(data.batch_b.inputs, data.batch_b.waterfall, false, compareWaterfallB);
+        renderWaterfall(data.batch_a.inputs, data.batch_a.waterfall, false, compareWaterfallA, true);
+        renderWaterfall(data.batch_b.inputs, data.batch_b.waterfall, false, compareWaterfallB, true);
         compareGrid.style.display = 'grid';
+        compareExportBtn.style.display = 'inline-block';
       } else {
         const batchA = OFFLINE_BATCHES.find(b => b.id === idA) || OFFLINE_BATCHES[0];
         const batchB = OFFLINE_BATCHES.find(b => b.id === idB) || OFFLINE_BATCHES[1];
@@ -1583,28 +1788,71 @@
         const resB = computeWaterfallOffline(batchB);
 
         const diffs = {
-          'Gateway Fee': Math.abs(resA.gateway_fee - resB.gateway_fee),
-          'GST on Fee': Math.abs(resA.gst_on_fee - resB.gst_on_fee),
-          'Refunds': Math.abs(resA.refunds - resB.refunds),
-          'Reserve Held': Math.abs(resA.reserve_held - resB.reserve_held),
+          'gateway_fee': Math.abs(resA.gateway_fee - resB.gateway_fee),
+          'gst_on_fee': Math.abs(resA.gst_on_fee - resB.gst_on_fee),
+          'refunds': Math.abs(resA.refunds - resB.refunds),
+          'reserve_held': Math.abs(resA.reserve_held - resB.reserve_held),
         };
         const maxKey = Object.keys(diffs).reduce((a, b) => diffs[a] > diffs[b] ? a : b);
         const diffVal = diffs[maxKey];
-        const note = `The biggest difference: ${maxKey} had a ₹${diffVal.toFixed(2)} swing between ${idA} and ${idB}.`;
+        const keyLabel = maxKey.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+        const amtA = resA[maxKey];
+        const amtB = resB[maxKey];
+
+        const note = amtA > amtB
+          ? `The biggest difference: ${keyLabel} was ₹${amtA.toFixed(2)} in ${idA} vs ₹${amtB.toFixed(2)} in ${idB} — that's a ₹${diffVal.toFixed(2)} swing.`
+          : `The biggest difference: ${keyLabel} was ₹${amtB.toFixed(2)} in ${idB} vs ₹${amtA.toFixed(2)} in ${idA} — that's a ₹${diffVal.toFixed(2)} swing.`;
+
+        let offlineWhy = '';
+        if (maxKey === 'gateway_fee') {
+          const rateA = batchA.gateway_fee_pct * 100;
+          const rateB = batchB.gateway_fee_pct * 100;
+          if (Math.abs(rateA - rateB) > 0.01) {
+            offlineWhy = `This was primarily driven by a fee rate difference: ${batchA.id} was charged ${rateA.toFixed(1)}% while ${batchB.id} was charged ${rateB.toFixed(1)}%. The gateway fee is the processor's charge for handling transactions, varying by payment method.`;
+          } else {
+            offlineWhy = `Both batches used the exact same ${rateA.toFixed(1)}% fee rate, so the swing came directly from the difference in gross transaction volume (₹${batchA.gross_amount.toLocaleString('en-IN')} vs ₹${batchB.gross_amount.toLocaleString('en-IN')}).`;
+          }
+        } else if (maxKey === 'gst_on_fee') {
+          offlineWhy = `Because GST applies strictly at 18% of the gateway fee (India's tax on the service fee, not the full sale), this difference directly mirrored the shift in payment processing fees between the two periods.`;
+        } else if (maxKey === 'refunds') {
+          offlineWhy = `This variation came from customer return activity: ₹${Math.max(amtA, amtB).toFixed(2)} vs ₹${Math.min(amtA, amtB).toFixed(2)}.`;
+        } else if (maxKey === 'reserve_held') {
+          const rateA = batchA.chargebacks_reserve_pct * 100;
+          const rateB = batchB.chargebacks_reserve_pct * 100;
+          if (Math.abs(rateA - rateB) > 0.01) {
+            offlineWhy = `This was driven by a dispute holdback rate difference (${rateA.toFixed(2)}% in ${batchA.id} vs ${rateB.toFixed(2)}% in ${batchB.id}) held back temporarily as a safety buffer against future customer bank disputes.`;
+          } else {
+            offlineWhy = `Both batches had a ${rateA.toFixed(2)}% reserve rate, meaning the reserve amount differed in direct proportion to the proceeds remaining after fees and refunds.`;
+          }
+        }
+
+        const narration = `Comparing ${batchA.id} (gross ₹${resA.gross.toLocaleString('en-IN')}, net settled ₹${resA.net_settled.toLocaleString('en-IN')}) with ${batchB.id} (gross ₹${resB.gross.toLocaleString('en-IN')}, net settled ₹${resB.net_settled.toLocaleString('en-IN')}): The single largest driver between them was ${keyLabel}, creating a ₹${diffVal.toFixed(2)} swing. ${offlineWhy}`;
+
+        lastCompareData = {
+          batch_a: { id: idA, inputs: batchA, waterfall: resA },
+          batch_b: { id: idB, inputs: batchB, waterfall: resB },
+          comparison_note: note,
+          comparison_narration: narration
+        };
 
         compareNoteText.textContent = note;
+        compareNarrationText.textContent = narration;
+        compareNarrationText.style.display = 'block';
         compareNoteCard.style.display = 'block';
 
         compareTitleA.textContent = `${idA}: ${batchA.label}`;
         compareTitleB.textContent = `${idB}: ${batchB.label}`;
 
-        renderWaterfall(batchA, resA, false, compareWaterfallA);
-        renderWaterfall(batchB, resB, false, compareWaterfallB);
+        renderWaterfall(batchA, resA, false, compareWaterfallA, true);
+        renderWaterfall(batchB, resB, false, compareWaterfallB, true);
         compareGrid.style.display = 'grid';
+        compareExportBtn.style.display = 'inline-block';
       }
     } catch (err) {
       compareNoteText.textContent = `Comparison Error: ${err.message}`;
+      compareNarrationText.style.display = 'none';
       compareNoteCard.style.display = 'block';
+      compareExportBtn.style.display = 'none';
     } finally {
       compareBtn.disabled = false;
       compareBtn.textContent = 'Compare';
@@ -1615,8 +1863,23 @@
   compareSelectA.addEventListener('change', runCompare);
   compareSelectB.addEventListener('change', runCompare);
 
+  compareExportBtn.addEventListener('click', () => {
+    if (!lastCompareData) return;
+    const text = generateCompareExportText(
+      lastCompareData.batch_a,
+      lastCompareData.batch_b,
+      lastCompareData.comparison_note,
+      lastCompareData.comparison_narration
+    );
+    const idA = lastCompareData.batch_a.id;
+    const idB = lastCompareData.batch_b.id;
+    const timestamp = new Date().toISOString().split('T')[0];
+    downloadExport(text, `comparison-${idA}-vs-${idB}-${timestamp}.txt`);
+  });
+
   // ========== PDF UPLOAD HANDLER ==========
   const pdfUploadInput = document.getElementById('pdfUploadInput');
+  const extractedIntroBanner = document.getElementById('extractedIntroBanner');
   const extractedFieldsCard = document.getElementById('extractedFieldsCard');
   const extractedFilename = document.getElementById('extractedFilename');
   const uploadSummaryBanner = document.getElementById('uploadSummaryBanner');
@@ -1630,6 +1893,7 @@
     narrationCard.style.display = 'none';
     insightsCallout.style.display = 'none';
     extractedFieldsCard.style.display = 'none';
+    if (extractedIntroBanner) extractedIntroBanner.style.display = 'none';
 
     try {
       const formData = new FormData();
@@ -1663,12 +1927,13 @@
       extractedFieldsGrid.innerHTML = `
         <div class="extracted-item"><div class="k">Statement Date</div><div class="v">${ef.statement_date || 'N/A'}</div></div>
         <div class="extracted-item"><div class="k">Gross Sales</div><div class="v">₹${ef.gross_amount.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></div>
-        <div class="extracted-item"><div class="k">Fee Rate</div><div class="v">${(ef.gateway_fee_pct * 100).toFixed(1)}%</div></div>
-        <div class="extracted-item"><div class="k">GST on Fee</div><div class="v">${(ef.gst_on_fee_pct * 100).toFixed(0)}%</div></div>
+        <div class="extracted-item"><div class="k">Fee Rate ${makeInfoTip("The agreed percentage fee charged by the payment gateway per transaction.")}</div><div class="v">${(ef.gateway_fee_pct * 100).toFixed(1)}%</div></div>
+        <div class="extracted-item"><div class="k">GST on Fee ${makeInfoTip("The government tax percentage applied strictly to payment processing fees (typically 18%).")}</div><div class="v">${(ef.gst_on_fee_pct * 100).toFixed(0)}%</div></div>
         <div class="extracted-item"><div class="k">Refunds</div><div class="v">₹${ef.refunds_amount.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></div>
-        <div class="extracted-item"><div class="k">Reserve Rate</div><div class="v">${(ef.chargebacks_reserve_pct * 100).toFixed(2)}%</div></div>
+        <div class="extracted-item"><div class="k">Reserve Rate ${makeInfoTip("The percentage held back temporarily as a safety buffer against future disputes.")}</div><div class="v">${(ef.chargebacks_reserve_pct * 100).toFixed(2)}%</div></div>
         <div class="extracted-item"><div class="k">Txns / Refunds</div><div class="v">${ef.transactions_count} / ${ef.refunds_count}</div></div>
       `;
+      if (extractedIntroBanner) extractedIntroBanner.style.display = 'block';
       extractedFieldsCard.style.display = 'block';
 
       // Render waterfall using the exact same locked render function
@@ -1705,6 +1970,18 @@
       waterfallCard.innerHTML = `<div class="empty-state">Upload Error: ${err.message}</div>`;
     } finally {
       pdfUploadInput.value = '';
+    }
+  });
+
+  // Handle tap / click on info tips
+  document.addEventListener('click', (e) => {
+    const tip = e.target.closest('.info-tip');
+    document.querySelectorAll('.info-tip.active').forEach(t => {
+      if (t !== tip) t.classList.remove('active');
+    });
+    if (tip) {
+      e.stopPropagation();
+      tip.classList.toggle('active');
     }
   });
 

@@ -217,3 +217,69 @@ def narrate(
         return narrate_llm(batch, result, question, modification_note)
     return narrate_template(batch, result, question, modification_note)
 
+
+def narrate_comparison(
+    batch_a: SettlementBatch,
+    result_a: WaterfallResult,
+    batch_b: SettlementBatch,
+    result_b: WaterfallResult,
+    biggest_diff_key: str,
+    biggest_diff_value: float,
+) -> str:
+    """Generate a plain-language narrative explaining the primary difference between two settlements and the rates behind it."""
+    key_label = biggest_diff_key.replace("_", " ").title()
+    amt_a = getattr(result_a, biggest_diff_key)
+    amt_b = getattr(result_b, biggest_diff_key)
+    higher_batch = batch_a.id if amt_a > amt_b else batch_b.id
+    lower_batch = batch_b.id if amt_a > amt_b else batch_a.id
+    higher_amt = max(amt_a, amt_b)
+    lower_amt = min(amt_a, amt_b)
+
+    if biggest_diff_key == "gateway_fee":
+        rate_a = batch_a.gateway_fee_pct * 100
+        rate_b = batch_b.gateway_fee_pct * 100
+        if abs(rate_a - rate_b) > 0.01:
+            why = (
+                f"This was primarily driven by a fee rate difference: {batch_a.id} was charged {rate_a:.1f}% "
+                f"while {batch_b.id} was charged {rate_b:.1f}%. "
+                f"The gateway fee is the processor's charge for handling transactions, varying by payment method."
+            )
+        else:
+            why = (
+                f"Both batches used the exact same {rate_a:.1f}% fee rate, so the swing came directly from the difference "
+                f"in gross transaction volume ({_inr(batch_a.gross_amount)} vs {_inr(batch_b.gross_amount)})."
+            )
+    elif biggest_diff_key == "gst_on_fee":
+        why = (
+            f"Because GST applies strictly at {batch_a.gst_on_fee_pct * 100:.0f}% of the gateway fee (India's tax on the service fee, not the full sale), "
+            f"this difference directly mirrored the shift in payment processing fees between the two periods."
+        )
+    elif biggest_diff_key == "refunds":
+        why = (
+            f"This variation came from customer return activity: {higher_batch} saw {_inr(higher_amt)} in money sent back to customers, "
+            f"compared to {_inr(lower_amt)} in {lower_batch}."
+        )
+    elif biggest_diff_key == "reserve_held":
+        rate_a = batch_a.chargebacks_reserve_pct * 100
+        rate_b = batch_b.chargebacks_reserve_pct * 100
+        if abs(rate_a - rate_b) > 0.01:
+            why = (
+                f"This was driven by a dispute holdback rate difference ({rate_a:.2f}% in {batch_a.id} vs {rate_b:.2f}% in {batch_b.id}) "
+                f"held back temporarily as a safety buffer against future customer bank disputes."
+            )
+        else:
+            why = (
+                f"Both batches had a {rate_a:.2f}% reserve rate, meaning the reserve amount differed in direct proportion "
+                f"to the proceeds remaining after fees and refunds."
+            )
+    else:
+        why = ""
+
+    return (
+        f"Comparing {batch_a.id} (gross {_inr(result_a.gross)}, net settled {_inr(result_a.net_settled)}) with "
+        f"{batch_b.id} (gross {_inr(result_b.gross)}, net settled {_inr(result_b.net_settled)}): "
+        f"The single largest driver between them was {key_label}, creating a {_inr(biggest_diff_value)} swing "
+        f"({_inr(amt_a)} in {batch_a.id} vs {_inr(amt_b)} in {batch_b.id}). {why}"
+    )
+
+

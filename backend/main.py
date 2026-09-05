@@ -40,7 +40,7 @@ from extract_from_pdf import extract_batch_from_pdf
 
 import db
 from followup import clean_question, parse_followup, parse_projection
-from narrator import narrate
+from narrator import narrate, narrate_comparison
 from waterfall_core import SettlementBatch, assert_waterfall_invariants, compute_waterfall
 from insights import get_batch_insights
 
@@ -448,10 +448,15 @@ def compare(batch_id_a: str, batch_id_b: str) -> dict:
         chargebacks_reserve_pct=batch_b.chargebacks_reserve_pct,
     )
 
+    comparison_narration = narrate_comparison(
+        batch_a, result_a, batch_b, result_b, biggest_diff_key, biggest_diff_value
+    )
+
     return {
         "batch_a": {"id": batch_id_a, "inputs": inputs_a, "waterfall": WaterfallOut(**asdict(result_a))},
         "batch_b": {"id": batch_id_b, "inputs": inputs_b, "waterfall": WaterfallOut(**asdict(result_b))},
         "comparison_note": comparison_note,
+        "comparison_narration": comparison_narration,
     }
 
 

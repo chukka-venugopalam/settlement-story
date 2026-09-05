@@ -109,6 +109,8 @@ def extract_text_from_pdf(pdf_source) -> str:
         
     extracted = " ".join(texts).strip()
     if extracted:
+        # Normalize PDF literal string escape sequences (e.g. \(EMI\) -> (EMI))
+        extracted = extracted.replace(r"\(", "(").replace(r"\)", ")").replace(r"\\", "\\")
         return extracted
 
     # Fallback to pdfplumber if stream decompression yielded nothing
@@ -160,6 +162,28 @@ def extract_batch_from_pdf(pdf_source, batch_id: str = "extracted-from-pdf") -> 
         except Exception:
             pass
     if not date_str:
+        date_match = re.search(r"Statement Period:\s*([A-Za-z]{3}\s+\d{1,2},?\s+\d{4})", text, re.IGNORECASE)
+        if date_match:
+            clean_d = date_match.group(1).replace(",", "")
+            try:
+                date_str = datetime.strptime(clean_d, "%b %d %Y").strftime("%Y-%m-%d")
+            except Exception:
+                pass
+    if not date_str:
+        date_match = re.search(r"Statement Date:\s*(\d{1,2}\s+[A-Za-z]+\s+\d{4})", text, re.IGNORECASE)
+        if date_match:
+            try:
+                date_str = datetime.strptime(date_match.group(1), "%d %B %Y").strftime("%Y-%m-%d")
+            except Exception:
+                pass
+    if not date_str:
+        date_match = re.search(r"for the period ending\s*(\d{1,2}-[A-Za-z]{3}-\d{4})", text, re.IGNORECASE)
+        if date_match:
+            try:
+                date_str = datetime.strptime(date_match.group(1), "%d-%b-%Y").strftime("%Y-%m-%d")
+            except Exception:
+                pass
+    if not date_str:
         iso_match = re.search(r"(\d{4}-\d{2}-\d{2})", text)
         if iso_match:
             date_str = iso_match.group(1)
@@ -168,30 +192,80 @@ def extract_batch_from_pdf(pdf_source, batch_id: str = "extracted-from-pdf") -> 
 
     # 1b. Merchant / Entity Name
     merchant_match = re.search(
-        r"(?:Entity Name|Merchant Name|Merchant|Business Name|Account Name):\s*([^|\n\r]+)",
+        r"(?:Entity Name|Merchant Name|Merchant|Business Name|Account Name|Entity):\s*([^|\n\r]+)",
         text,
         re.IGNORECASE,
     )
-    merchant_name = merchant_match.group(1).strip() if merchant_match else None
+    if not merchant_match:
+        top_match = re.search(r"^([A-Z\s&]{4,}?)\s+(?:Settlement Statement|Merchant ID)", text.strip())
+        if top_match:
+            merchant_name = top_match.group(1).strip()
+        else:
+            merchant_name = None
+    else:
+        merchant_name = merchant_match.group(1).strip()
+
+    # Section Boundaries
+    TXN_HEADER_RE = re.compile(
+        r'(?:TRANSACTION\s+DETAILS|TRANSACTION\s+DETAIL|CAPTURED\s+TRANSACTIONS|TRANSACTIONS\s*\([^)]*\)|\bTransactions\b)',
+        re.IGNORECASE
+    )
+    REFUND_HEADER_RE = re.compile(
+        r'\b(?:REFUNDS\s+PROCESSED|REFUNDS\s*/\s*REVERSALS|REFUNDS\s+AND\s+REVERSALS|REFUNDS|REVERSALS)\b(?:\s*\([^)]*\))?',
+        re.IGNORECASE
+    )
+    SECTION_END_RE = re.compile(
+        r'\b(?:CHARGES\s+SUMMARY|CHARGES\s+AND\s+RATES|RATE\s+SUMMARY|FEES\s+AND\s+CHARGES|FEES\s+SUMMARY|TOTAL\s+TRANSACTION\s+VOLUME|OPERATIONAL\s+NOTE|END\s+OF\s+STATEMENT|SUMMARY:)\b',
+        re.IGNORECASE
+    )
 
     # 2. Transaction Amounts -> gross_amount
-    txn_section = text
-    if "TRANSACTION DETAILS" in text:
-        part = text.split("TRANSACTION DETAILS")[1]
-        for stop in ["REFUNDS PROCESSED", "CHARGES SUMMARY", "CHARGES AND RATES", "End of statement"]:
-            if stop in part:
-                part = part.split(stop)[0]
-        txn_section = part
+    txn_matches = list(TXN_HEADER_RE.finditer(text))
+    valid_txn_header = None
+    for tm in txn_matches:
+        start = tm.start()
+        prefix = text[max(0, start - 30):start]
+        if 'across' in prefix.lower() or 'total' in prefix.lower():
+            continue
+        valid_txn_header = tm
+        break
 
-    txn_amounts_matches = re.findall(
-        r"(?:UPI|Card|Netbanking|Wallet|EMI|Debit|Credit)\s+([\d,]+\.\d{2})",
-        txn_section,
+    txn_section = text
+    declared_txn_count = None
+    count_m = re.search(
+        r"(?:TRANSACTION\s+DETAILS|TRANSACTION\s+DETAIL|TRANSACTIONS)\s*\((?:approx\.?\s*)?(\d+)\s*items?\)",
+        text,
         re.IGNORECASE,
     )
+    if count_m:
+        declared_txn_count = int(count_m.group(1))
+    if declared_txn_count is None:
+        count_m = re.search(
+            r"(?:total\s+transactions?\s+(?:this\s+period)?|total\s+transaction\s+volume|summary:\s*)\s*:?\s*(\d+)",
+            text,
+            re.IGNORECASE,
+        )
+        if count_m:
+            declared_txn_count = int(count_m.group(1))
+
+    if valid_txn_header:
+        part = text[valid_txn_header.end():]
+        earliest_stop = len(part)
+        for stop_re in [REFUND_HEADER_RE, SECTION_END_RE]:
+            sm = stop_re.search(part)
+            if sm and sm.start() < earliest_stop:
+                earliest_stop = sm.start()
+        txn_section = part[:earliest_stop]
+
+    # Priority 1: ID-based capture (matches TXN... through currency amount at end of transaction line)
+    txn_amounts_matches = re.findall(r'\bTXN\w*\b(?:(?!\bTXN\w*\b).)*?\b([\d,]+\.\d{2})\b', txn_section)
+
+    # Priority 2: Method-based capture (handles lines with method names, optional parentheses like (EMI) or corporate card)
     if not txn_amounts_matches:
         txn_amounts_matches = re.findall(
-            r"TXN\w+\s+(?:\d{1,2}:\d{2}\s+)?(?:\w+\s+)?([\d,]+\.\d{2})",
+            r'(?:UPI|Card|Netbanking|Wallet|EMI|Debit|Credit)(?:\s*\([^)]*\)|\s+[A-Za-z]+)*\s+([\d,]+\.\d{2})',
             txn_section,
+            re.IGNORECASE,
         )
 
     if not txn_amounts_matches:
@@ -210,22 +284,86 @@ def extract_batch_from_pdf(pdf_source, batch_id: str = "extracted-from-pdf") -> 
     else:
         txn_floats = [float(a.replace(",", "")) for a in txn_amounts_matches]
 
+    # Validate transaction count consistency
+    if declared_txn_count is not None and len(txn_floats) != declared_txn_count:
+        raise ValueError(
+            f"Could not confidently extract required field: gross_amount (expected {declared_txn_count} transactions from statement header/summary, but captured {len(txn_floats)})"
+        )
+
+    # Check for unparsed TXN markers in transaction section
+    txn_marker_count = len(re.findall(r'\bTXN\w*\b', txn_section))
+    if txn_marker_count > 0 and len(txn_floats) < txn_marker_count:
+        raise ValueError(
+            f"Could not confidently extract required field: gross_amount (found {txn_marker_count} transaction entries in statement, but only confidently parsed {len(txn_floats)})"
+        )
+
     gross_amount = round(sum(txn_floats), 2)
     if gross_amount <= 0:
         raise ValueError("Could not confidently extract required field: gross_amount (computed gross sum was zero)")
 
     # 3. Refund Amounts -> refunds_amount
     refund_floats = []
-    if "REFUNDS PROCESSED" in text:
-        part = text.split("REFUNDS PROCESSED")[1]
-        for stop in ["CHARGES SUMMARY", "CHARGES AND RATES", "TRANSACTION DETAILS", "End of statement"]:
-            if stop in part:
-                part = part.split(stop)[0]
-        ref_matches = re.findall(r"REF\w+\s+(?:TXN\w+\s+)?([\d,]+\.\d{2})", part)
-        if not ref_matches:
-            ref_matches = re.findall(r"([\d,]+\.\d{2})", part)
-        refund_floats = [float(a.replace(",", "")) for a in ref_matches]
-    
+    ref_match = REFUND_HEADER_RE.search(text)
+    if ref_match:
+        ref_header_text = ref_match.group(0)
+        is_zero_items = bool(re.search(r'\(0\s*items?\)|:\s*(?:0|0\.00|nil|none)\b', ref_header_text, re.IGNORECASE))
+        if not is_zero_items:
+            declared_ref_count = None
+            count_m = re.search(
+                r"(?:REFUNDS\s+PROCESSED|REFUNDS\s*/\s*REVERSALS|REFUNDS\s+AND\s+REVERSALS|REFUNDS|REVERSALS)\s*\((?:approx\.?\s*)?(\d+)\s*items?\)",
+                text,
+                re.IGNORECASE,
+            )
+            if count_m:
+                declared_ref_count = int(count_m.group(1))
+            if declared_ref_count is None:
+                count_m = re.search(
+                    r"(?:summary:\s*\d+\s*transactions,\s*|total\s+refunds?:\s*)(\d+)\s*refunds?",
+                    text,
+                    re.IGNORECASE,
+                )
+                if count_m:
+                    declared_ref_count = int(count_m.group(1))
+
+            part = text[ref_match.end():]
+            earliest_stop = len(part)
+            for stop_re in [TXN_HEADER_RE, SECTION_END_RE]:
+                sm = stop_re.search(part)
+                if sm and sm.start() < earliest_stop:
+                    earliest_stop = sm.start()
+            ref_section = part[:earliest_stop].strip()
+
+            ref_matches = re.findall(r'\b(?:REF|REV)\w*\b(?:(?!\b(?:REF|REV)\w*\b).)*?\b([\d,]+\.\d{2})\b', ref_section, re.IGNORECASE)
+            if not ref_matches:
+                ref_matches = re.findall(r'\b([\d,]+\.\d{2})\b', ref_section)
+            
+            refund_floats = [float(a.replace(",", "")) for a in ref_matches]
+
+            if len(refund_floats) == 0:
+                raise ValueError(
+                    "Could not confidently extract required field: refunds_amount (refund section detected in statement, but refund amounts could not be extracted)"
+                )
+            if declared_ref_count is not None and len(refund_floats) != declared_ref_count:
+                raise ValueError(
+                    f"Could not confidently extract required field: refunds_amount (expected {declared_ref_count} refunds from statement header/summary, but captured {len(refund_floats)})"
+                )
+    else:
+        # No refund header found: check whether refund transaction markers or summary amounts exist
+        has_ref_markers = bool(re.search(r'\b(?:REF\d+|REV\d+)\b', text, re.IGNORECASE))
+        ref_summary_match = re.search(
+            r"(?:Total\s+Refunds?|Refunds?\s+Amount|Total\s+Reversals?):\s*(?:₹|INR|Rs\.?)?\s*([\d,]+\.\d{2})",
+            text,
+            re.IGNORECASE,
+        )
+        if ref_summary_match:
+            refund_floats = [float(ref_summary_match.group(1).replace(",", ""))]
+        elif has_ref_markers:
+            raise ValueError(
+                "Could not confidently extract required field: refunds_amount (refund identifiers detected in document, but refund section could not be confidently extracted)"
+            )
+        else:
+            refund_floats = []
+
     refunds_amount = round(sum(refund_floats), 2)
 
     # 4. Gateway Fee Percentage
@@ -299,21 +437,37 @@ def extract_batch_from_pdf(pdf_source, batch_id: str = "extracted-from-pdf") -> 
 
 
 if __name__ == "__main__":
-    # Test 1: Original scattered settlement statement PDF
-    batch1, fields1 = extract_batch_from_pdf(PDF_PATH_1)
-    result1 = compute_waterfall(batch1)
-    assert_waterfall_invariants(result1)
-    expected_net_1 = 47299.70
-    assert result1.net_settled == expected_net_1, f"Expected {expected_net_1}, got {result1.net_settled}"
-    print(f"PASS PDF 1 (scattered_settlement_statement.pdf): net_settled = {result1.net_settled}")
+    test_files = [
+        ("scattered_settlement_statement.pdf", 50000.00, 800.00, 47299.70),
+        ("messy_settlement_statement_2.pdf", 75000.00, 2500.00, 68881.75),
+        ("d2c_apparel_settlement_4.pdf", 26587.00, 2150.00, 23452.41),
+        ("saas_subscription_settlement_5.pdf", 185000.00, 9000.00, 165214.72),
+        ("food_delivery_settlement_6.pdf", 14500.00, 1200.00, 12657.35),
+        ("electronics_retailer_settlement_7.pdf", 111247.00, 6250.00, 100066.85),
+        ("coaching_institute_settlement_8.pdf", 140000.00, 4500.00, 131201.14),
+        ("Artisan_Woodworks_Statement.pdf", 64500.00, 9500.00, 51398.78),
+        ("Petal_Paw_Grooming_Statement.pdf", 30600.00, 1850.00, 27199.34),
+        ("Sunrise_Bakery_Statement.pdf", 20500.00, 900.00, 18829.46),
+    ]
 
-    # Test 2: Additional messy settlement statement PDF
-    if PDF_PATH_2.exists():
-        batch2, fields2 = extract_batch_from_pdf(PDF_PATH_2)
-        result2 = compute_waterfall(batch2)
-        assert_waterfall_invariants(result2)
-        expected_net_2 = 68881.75
-        assert result2.net_settled == expected_net_2, f"Expected {expected_net_2}, got {result2.net_settled}"
-        print(f"PASS PDF 2 (messy_settlement_statement_2.pdf): net_settled = {result2.net_settled}")
+    for fname, exp_gross, exp_ref, exp_net in test_files:
+        fpath = Path(__file__).resolve().parent / fname
+        if fpath.exists():
+            batch, fields = extract_batch_from_pdf(fpath)
+            res = compute_waterfall(batch)
+            assert_waterfall_invariants(res)
+            assert batch.gross_amount == exp_gross, f"{fname}: Expected gross {exp_gross}, got {batch.gross_amount}"
+            assert batch.refunds_amount == exp_ref, f"{fname}: Expected refunds {exp_ref}, got {batch.refunds_amount}"
+            assert res.net_settled == exp_net, f"{fname}: Expected net {exp_net}, got {res.net_settled}"
+            print(f"PASS {fname}: gross={batch.gross_amount}, refunds={batch.refunds_amount}, net={res.net_settled}")
+
+    # Negative test: missing_gst_settlement_statement_3.pdf must raise ValueError
+    missing_gst_path = Path(__file__).resolve().parent / "missing_gst_settlement_statement_3.pdf"
+    if missing_gst_path.exists():
+        try:
+            extract_batch_from_pdf(missing_gst_path)
+            assert False, "Expected ValueError on missing GST statement"
+        except ValueError as e:
+            print(f"PASS missing_gst_settlement_statement_3.pdf correctly rejected: {e}")
 
     print("\nALL PDF EXTRACTION TESTS PASSED")
