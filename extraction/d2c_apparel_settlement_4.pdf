@@ -1,0 +1,97 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 1269 >>
+stream
+BT
+/F1 9 Tf
+15 TL
+40 780 Td
+ET
+BT
+/F2 16 Tf
+22 TL
+(RAZORPAY MERCHANT SETTLEMENT STATEMENT) Tj T*
+ET
+BT
+/F1 9 Tf
+15 TL
+(Merchant Name: VogueThreads Studio Pvt Ltd | Merchant ID: MID48291VT) Tj T*
+(Statement Period: 28 Aug 2026 | Currency: INR | Settlement Ref: SETT-20260828-VT91) Tj T*
+() Tj T*
+ET
+BT
+/F2 14 Tf
+18 TL
+(CHARGES SUMMARY) Tj T*
+ET
+BT
+/F1 9 Tf
+15 TL
+(Payment Gateway Fee: 2.00% of gross transaction value) Tj T*
+(Applicable GST: 18% on gateway fee) Tj T*
+(Rolling Reserve: 1.50% held for 90 days as risk buffer) Tj T*
+() Tj T*
+ET
+BT
+/F2 14 Tf
+18 TL
+(TRANSACTION DETAILS) Tj T*
+ET
+BT
+/F1 9 Tf
+15 TL
+(Txn ID       Time    Method      Amount \(Rs.\)) Tj T*
+(TXN5011      08:14   UPI         3,499.00) Tj T*
+(TXN5012      10:25   Card        5,890.00) Tj T*
+(TXN5013      12:40   UPI         2,150.00) Tj T*
+(TXN5014      14:15   Card        4,299.00) Tj T*
+(TXN5015      17:30   Netbanking  8,750.00) Tj T*
+(TXN5016      20:45   UPI         1,999.00) Tj T*
+(Total transaction volume: 6 captured records) Tj T*
+() Tj T*
+ET
+BT
+/F2 14 Tf
+18 TL
+(REFUNDS PROCESSED) Tj T*
+ET
+BT
+/F1 9 Tf
+15 TL
+(Ref ID       Against Txn  Amount \(Rs.\)) Tj T*
+(REF101       TXN5013      2,150.00) Tj T*
+() Tj T*
+(This is an automated statement for merchant reconciliation.) Tj T*
+ET
+
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000251 00000 n 
+0000001572 00000 n 
+0000001642 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+1717
+%%EOF

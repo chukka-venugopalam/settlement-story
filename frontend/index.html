@@ -1,0 +1,1715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Settlement Story</title>
+<script>
+  // Backend API base URL for split deployment (e.g. Render backend + Vercel frontend).
+  // Default empty string uses same-origin (default for local dev via ./run.sh).
+  window.API_BASE_URL = window.API_BASE_URL || "";
+</script>
+<!-- Google Fonts CDN link preserved as fallback -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* Self-hosted local fonts for offline operation */
+  @font-face {
+    font-family: 'Fraunces';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('/fonts/Fraunces-500.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'Fraunces';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('/fonts/Fraunces-600.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'IBM Plex Sans';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('/fonts/IBMPlexSans-400.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'IBM Plex Sans';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('/fonts/IBMPlexSans-500.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'IBM Plex Sans';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('/fonts/IBMPlexSans-600.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'IBM Plex Mono';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('/fonts/IBMPlexMono-400.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'IBM Plex Mono';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('/fonts/IBMPlexMono-500.woff2') format('woff2');
+  }
+  
+  :root {
+    --paper-bg: #FAF8F5;
+    --paper-card: #FFFFFF;
+    --card-border: #E8E0D7;
+    --card-border-soft: rgba(152, 27, 27, 0.09);
+    --card-shadow: 0 4px 20px -2px rgba(90, 20, 20, 0.04), 0 1px 4px rgba(0, 0, 0, 0.03);
+    
+    /* Typography Inks */
+    --ink-primary: #1A1715;
+    --ink-muted: #57524E;
+    --ink-faint: #76706B;
+
+    /* Primary Brand Red */
+    --brand-red: #981B1B;
+    --brand-red-hover: #7F1515;
+    --brand-red-tint: #FDF2F2;
+    --brand-red-border: #F3CECE;
+
+    /* Invariant 2: Deduction Color (Burnt Sienna — distinct from Brand Red) */
+    --deduction-sienna: #8E4931;
+    --deduction-tint: #FDF3ED;
+    --deduction-border: #F2DCD1;
+
+    /* Invariant 3: Net Settled (Deep Spruce — positive/resolved) */
+    --net-settled-green: #1C5E4A;
+    --net-settled-tint: #EEF7F3;
+    --net-settled-border: #C8E5D9;
+
+    /* Gross Inflow (Warm Golden Raw Ochre) */
+    --gross-amber: #965B10;
+    --gross-amber-tint: #FEF8EC;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper-bg);
+    color: var(--ink-primary);
+    /* Fallback font stacks for offline use */
+    font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  }
+
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(ellipse 900px 520px at 50% -10%, rgba(152, 27, 27, 0.05), transparent 65%),
+      linear-gradient(180deg, #FAF8F5 0%, #F5F1EB 100%);
+  }
+
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 48px 20px 80px;
+  }
+
+  /* ---------- Header ---------- */
+
+  .eyebrow {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--brand-red);
+    margin-bottom: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 14px;
+    height: 2px;
+    background: var(--brand-red);
+    border-radius: 2px;
+  }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 34px;
+    line-height: 1.15;
+    margin: 0 0 6px;
+    letter-spacing: -0.01em;
+    color: var(--ink-primary);
+  }
+
+  .tagline {
+    font-size: 15px;
+    color: var(--ink-muted);
+    margin: 0 0 28px;
+  }
+
+  /* ---------- Batch picker ---------- */
+
+  .batch-row {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    margin-bottom: 20px;
+    scrollbar-width: thin;
+  }
+
+  .batch-chip {
+    flex: 0 0 auto;
+    background: #FFFFFF;
+    border: 1px solid var(--card-border);
+    color: var(--ink-muted);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12.5px;
+    font-weight: 500;
+    padding: 9px 14px;
+    border-radius: 12px 10px 13px 11px; /* Subtle hand-painted corner asymmetry */
+    cursor: pointer;
+    white-space: nowrap;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  }
+
+  .batch-chip:hover {
+    border-color: var(--brand-red-border);
+    color: var(--brand-red);
+    background: var(--brand-red-tint);
+  }
+
+  .batch-chip.active {
+    background: var(--brand-red-tint);
+    border-color: var(--brand-red);
+    color: var(--brand-red);
+    font-weight: 600;
+    box-shadow: 0 2px 6px rgba(152, 27, 27, 0.12);
+  }
+
+  .batch-chip .amt {
+    font-family: 'IBM Plex Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    margin-left: 6px;
+    opacity: 0.85;
+  }
+
+  /* ---------- Chat input ---------- */
+
+  .ask-card {
+    background: #FFFFFF;
+    border: 1px solid var(--card-border);
+    border-radius: 16px 14px 18px 15px;
+    padding: 18px;
+    margin-bottom: 18px;
+    box-shadow: var(--card-shadow);
+  }
+
+  .ask-row { display: flex; gap: 10px; }
+
+  #question {
+    flex: 1;
+    background: #FAF8F5;
+    border: 1.5px solid var(--card-border);
+    border-radius: 10px;
+    color: var(--ink-primary);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14.5px;
+    padding: 12px 14px;
+    outline: none;
+    transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  #question::placeholder { color: var(--ink-faint); }
+  #question:focus {
+    border-color: var(--brand-red);
+    background: #FFFFFF;
+    box-shadow: 0 0 0 3px rgba(152, 27, 27, 0.08);
+  }
+
+  #askBtn {
+    background: var(--brand-red);
+    color: #FFFFFF;
+    border: none;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 12px 22px;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(152, 27, 27, 0.25);
+    transition: background 0.15s ease, filter 0.15s ease, transform 0.1s ease;
+  }
+
+  #askBtn:hover { background: var(--brand-red-hover); filter: brightness(1.05); }
+  #askBtn:active { transform: scale(0.98); }
+  #askBtn:disabled { opacity: 0.5; cursor: default; }
+
+  .suggestions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .suggestion-chip {
+    background: #FAF8F5;
+    border: 1px dashed #DDD4CA;
+    color: var(--ink-muted);
+    font-family: 'IBM Plex Sans', sans-serif;
+    padding: 10px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    transition: all 0.15s ease;
+  }
+
+  .suggestion-chip:hover {
+    border-color: var(--brand-red);
+    background: var(--brand-red-tint);
+    color: var(--ink-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(152, 27, 27, 0.08);
+  }
+
+  .chip-query {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--brand-red);
+  }
+
+  .chip-hint {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 11.5px;
+    color: var(--ink-muted);
+    line-height: 1.35;
+  }
+
+  .compare-intro {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13.5px;
+    color: var(--ink-muted);
+    line-height: 1.5;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    background: #FFFFFF;
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+  }
+
+  .upload-summary-banner {
+    background: var(--net-settled-tint);
+    border: 1px solid var(--net-settled-border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13.5px;
+    color: var(--net-settled-green);
+    line-height: 1.5;
+  }
+
+  /* ---------- Offline banner ---------- */
+
+  .banner {
+    display: none;
+    background: var(--deduction-tint);
+    border: 1px solid var(--deduction-border);
+    color: var(--deduction-sienna);
+    font-size: 12.5px;
+    padding: 9px 13px;
+    border-radius: 9px;
+    margin-bottom: 14px;
+  }
+  .banner.show { display: block; }
+
+  /* ---------- Waterfall ---------- */
+
+  .waterfall-card {
+    background: #FFFFFF;
+    border: 1px solid var(--card-border);
+    border-radius: 18px 16px 20px 17px;
+    padding: 24px 26px 22px;
+    margin-bottom: 18px;
+    min-height: 120px;
+    box-shadow: var(--card-shadow);
+  }
+
+  .empty-state {
+    color: var(--ink-faint);
+    font-size: 14px;
+    text-align: center;
+    padding: 40px 10px;
+  }
+
+  /* Live Follow-up simulation badge (Deep Slate Ultramarine — distinct from Brand Red) */
+  .hypo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #1E429F;
+    background: #EFF4FE;
+    border: 1px solid #C6D7F9;
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin-bottom: 14px;
+  }
+
+  .hypo-badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #1E429F;
+  }
+
+  .band {
+    margin-bottom: 14px;
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  .band.animate {
+    animation: settle 0.62s cubic-bezier(.34, 1.56, .64, 1) forwards;
+  }
+
+  @keyframes settle {
+    0%   { opacity: 0; transform: translateY(-10px) scaleY(0.7); }
+    60%  { opacity: 1; transform: translateY(1px) scaleY(1.04); }
+    100% { opacity: 1; transform: translateY(0) scaleY(1); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .band.animate { animation: none; opacity: 1; transform: none; }
+  }
+
+  .band-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 5px;
+  }
+
+  .band-label {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  /* Invariant 1: IBM Plex Mono for all currency numbers */
+  .band-figure {
+    font-family: 'IBM Plex Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  /* Invariant 2: Deduction band color in Burnt Sienna (distinct from Brand Red) */
+  .band-figure.deduction { color: var(--deduction-sienna); }
+  .band-figure.gross { color: var(--ink-primary); }
+
+  .bar-track {
+    height: 22px;
+    background: #F4EFEA;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: box-shadow 0.3s ease;
+  }
+
+  /* Gross bar fill in warm golden raw ochre */
+  .bar-fill.gross-fill {
+    background: linear-gradient(90deg, #965B10, #B8761E);
+  }
+
+  /* Invariant 2: Deduction bar fill in Burnt Sienna */
+  .bar-fill.coral-fill {
+    background: linear-gradient(90deg, var(--deduction-sienna), #B3684B);
+  }
+
+  .band.currently-animating .bar-fill {
+    box-shadow: 0 0 12px 1px rgba(152, 27, 27, 0.22);
+  }
+
+  .net-band {
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1.5px solid #EBE3DB; /* Hand-drawn soft brush divider */
+  }
+
+  /* Invariant 3: Net Settled figure positive and resolved in Forest Sage */
+  .net-label {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--net-settled-green);
+    margin-bottom: 6px;
+  }
+
+  .net-figure {
+    font-family: 'IBM Plex Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--net-settled-green);
+    margin-bottom: 8px;
+  }
+
+  .bar-fill.gold-fill {
+    background: linear-gradient(90deg, var(--net-settled-green), #278568);
+  }
+
+  .net-band .bar-track { height: 26px; }
+
+  /* ---------- Narration ---------- */
+
+  .narration-card {
+    background: #FFFFFF;
+    color: var(--ink-primary);
+    border: 1px solid var(--card-border);
+    border-left: 4px solid var(--brand-red);
+    border-radius: 16px 14px 18px 15px;
+    padding: 22px 24px;
+    margin-bottom: 12px;
+    box-shadow: var(--card-shadow);
+  }
+
+  .narration-headline {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 19px;
+    line-height: 1.4;
+    margin: 0 0 10px;
+    color: var(--brand-red);
+  }
+
+  .narration-body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14.5px;
+    line-height: 1.65;
+    color: var(--ink-muted);
+    margin: 0;
+  }
+
+  /* ---------- Insights callout ---------- */
+
+  .insights-callout {
+    background: var(--net-settled-tint);
+    border: 1px solid var(--net-settled-border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 13.5px;
+    color: var(--net-settled-green);
+    line-height: 1.5;
+  }
+
+  .insights-callout.warning {
+    background: #FEF3C7;
+    border-color: #FDE68A;
+    color: #854D0E;
+  }
+
+  /* ---------- Export button ---------- */
+
+  .export-btn {
+    background: #FFFFFF;
+    color: var(--brand-red);
+    border: 1.5px solid var(--brand-red);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 600;
+    font-size: 12.5px;
+    padding: 9px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 14px;
+    transition: all 0.15s ease;
+  }
+
+  .export-btn:hover {
+    background: var(--brand-red-tint);
+  }
+  .export-btn:active { transform: scale(0.98); }
+  .export-btn:disabled { opacity: 0.5; cursor: default; }
+
+  /* ---------- Footer note ---------- */
+
+  .footnote {
+    font-size: 12px;
+    color: var(--ink-faint);
+    text-align: center;
+    margin-top: 24px;
+  }
+
+  .footnote a { color: var(--brand-red); }
+
+  /* ---------- Loading state / Skeleton ---------- */
+
+  .waterfall-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .skeleton-band {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .skeleton-label {
+    height: 14px;
+    width: 100px;
+    background: #EFEAE3;
+    border-radius: 4px;
+  }
+
+  .skeleton-bar {
+    flex: 1;
+    height: 20px;
+    background: #EFEAE3;
+    border-radius: 4px;
+  }
+
+  .skeleton-amount {
+    height: 14px;
+    width: 80px;
+    background: #EFEAE3;
+    border-radius: 4px;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton-band { animation: none; }
+  }
+
+  /* ---------- Audit trail / Formula display ---------- */
+
+  .band-clickable {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+
+  .band-clickable:hover {
+    background: rgba(152, 27, 27, 0.03);
+    border-radius: 6px;
+  }
+
+  .formula-row {
+    display: none;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--card-border);
+    font-size: 13px;
+    color: var(--ink-muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .formula-row.visible {
+    display: block;
+  }
+
+  .formula-operator {
+    color: var(--brand-red);
+    margin: 0 4px;
+    font-weight: 600;
+  }
+
+  /* ---------- Mobile responsive ---------- */
+
+  @media (max-width: 640px) {
+    .wrap {
+      padding: 32px 16px 60px;
+    }
+
+    h1 {
+      font-size: 28px;
+      line-height: 1.3;
+    }
+
+    .batch-picker {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      max-width: 100%;
+    }
+
+    .batch-chip {
+      padding: 10px 14px;
+      font-size: 13px;
+    }
+
+    .suggestion-chip {
+      font-size: 12px;
+      padding: 8px 12px;
+    }
+
+    .question-input {
+      font-size: 14px;
+    }
+
+    .ask-btn {
+      font-size: 13px;
+      padding: 10px 14px;
+    }
+
+    .band-label-row {
+      font-size: 11px;
+    }
+
+    .band-figure {
+      font-size: 13px;
+    }
+
+    .net-figure {
+      font-size: 22px;
+    }
+
+    .footnote {
+      font-size: 11px;
+      padding: 0 8px;
+    }
+  }
+
+  /* ---------- PDF Upload & Extracted Card ---------- */
+
+  .upload-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--brand-red-tint);
+    border: 1.5px dashed var(--brand-red);
+    color: var(--brand-red);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  }
+
+  .upload-trigger:hover {
+    background: #FAECEC;
+    transform: translateY(-1px);
+  }
+
+  .extracted-card {
+    background: #FFFFFF;
+    border: 1px solid var(--net-settled-border);
+    border-left: 4px solid var(--net-settled-green);
+    border-radius: 14px 12px 15px 13px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(28, 94, 74, 0.06);
+  }
+
+  .extracted-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .extracted-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--net-settled-green);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .extracted-fn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    color: var(--ink-muted);
+  }
+
+  .extracted-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 8px;
+  }
+
+  .extracted-item {
+    background: #FAF8F5;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #EFEAE3;
+  }
+
+  .extracted-item .k {
+    color: var(--ink-muted);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 2px;
+  }
+
+  .extracted-item .v {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--ink-primary);
+  }
+
+  /* ---------- View Switcher Tabs ---------- */
+
+  .view-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    border-bottom: 1.5px solid var(--card-border);
+    padding-bottom: 10px;
+  }
+
+  .view-tab {
+    background: #FFFFFF;
+    border: 1px solid var(--card-border);
+    color: var(--ink-muted);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 18px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  }
+
+  .view-tab:hover {
+    color: var(--brand-red);
+    border-color: var(--brand-red-border);
+    background: var(--brand-red-tint);
+  }
+
+  .view-tab.active {
+    background: var(--brand-red);
+    border-color: var(--brand-red);
+    color: #FFFFFF;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(152, 27, 27, 0.25);
+  }
+
+  /* ---------- Compare Mode Styles ---------- */
+
+  .compare-controls {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    background: #FFFFFF;
+    border: 1px solid var(--card-border);
+    padding: 16px 20px;
+    border-radius: 14px;
+    margin-bottom: 20px;
+    box-shadow: var(--card-shadow);
+  }
+
+  .compare-select-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .compare-select-group label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-muted);
+  }
+
+  .compare-select {
+    background: #FAF8F5;
+    border: 1px solid var(--card-border);
+    color: var(--ink-primary);
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13.5px;
+    outline: none;
+    cursor: pointer;
+    width: 100%;
+    transition: border-color 0.15s ease;
+  }
+
+  .compare-select:focus {
+    border-color: var(--brand-red);
+  }
+
+  .compare-vs {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 16px;
+    color: var(--ink-muted);
+    padding-bottom: 10px;
+  }
+
+  .compare-run-btn {
+    background: var(--brand-red);
+    color: #FFFFFF;
+    border: none;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13.5px;
+    font-weight: 600;
+    padding: 10px 22px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s ease, filter 0.15s ease;
+    height: 42px;
+    box-shadow: 0 2px 6px rgba(152, 27, 27, 0.2);
+  }
+
+  .compare-run-btn:hover {
+    background: var(--brand-red-hover);
+    filter: brightness(1.05);
+  }
+
+  .compare-note-card {
+    background: var(--brand-red-tint);
+    border: 1px solid var(--brand-red-border);
+    border-left: 4px solid var(--brand-red);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+  }
+
+  .compare-note-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--brand-red);
+    margin-bottom: 6px;
+  }
+
+  .compare-note-text {
+    font-size: 14.5px;
+    line-height: 1.5;
+    color: var(--ink-primary);
+  }
+
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .compare-col-title {
+    font-family: 'Fraunces', serif;
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 10px;
+    color: var(--ink-primary);
+  }
+
+  .compare-card {
+    margin-bottom: 0;
+  }
+
+  @media (max-width: 680px) {
+    .compare-grid {
+      grid-template-columns: 1fr;
+    }
+    .compare-controls {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .compare-vs {
+      text-align: center;
+      padding: 0;
+    }
+  }
+
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="eyebrow">Settlement Story</div>
+  <h1 id="mainTitle">Ask about any settlement.</h1>
+  <p class="tagline">Every number below comes from one locked calculation — never a guess, never an LLM doing arithmetic.</p>
+
+  <div class="view-tabs">
+    <button id="tabAsk" class="view-tab active">Single Settlement</button>
+    <button id="tabCompare" class="view-tab">Compare Settlements</button>
+  </div>
+
+  <div id="banner" class="banner">Backend not reachable — showing offline preview data. Start the server to go live.</div>
+
+  <!-- SINGLE SETTLEMENT VIEW -->
+  <div id="askView">
+    <div class="picker-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+      <div style="font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted);">Pick Demo Batch or Upload PDF</div>
+      <label class="upload-trigger">
+        <span>📄 Upload Statement PDF</span>
+        <input type="file" id="pdfUploadInput" accept=".pdf,application/pdf" style="display:none;">
+      </label>
+    </div>
+
+    <div id="batchRow" class="batch-row"></div>
+
+    <div id="extractedFieldsCard" class="extracted-card" style="display:none;">
+      <div class="extracted-header">
+        <span class="extracted-title">📄 Extracted from Statement</span>
+        <span id="extractedFilename" class="extracted-fn"></span>
+      </div>
+      <div id="uploadSummaryBanner" class="upload-summary-banner" style="display:none;"></div>
+      <div id="extractedFieldsGrid" class="extracted-grid"></div>
+    </div>
+
+    <div class="ask-card">
+      <div class="ask-row">
+        <input id="question" type="text" placeholder="Why did I get less than expected?" autocomplete="off">
+        <button id="askBtn">Ask</button>
+      </div>
+      <div class="suggestions">
+        <button class="suggestion-chip" data-q="Why did my settlement come in lower than expected?" title="See exactly where your money went this period">
+          <span class="chip-query">Why was it lower?</span>
+          <span class="chip-hint">See exactly where your money went this period</span>
+        </button>
+        <button class="suggestion-chip" data-q="What if my refunds doubled?" title="Stress-test how a bad refund month would affect your payout">
+          <span class="chip-query">What if refunds doubled?</span>
+          <span class="chip-hint">Stress-test how a bad refund month would affect your payout</span>
+        </button>
+        <button class="suggestion-chip" data-q="What if the gateway fee was 3%?" title="See the cost difference of a higher fee tier, like EMI or corporate cards">
+          <span class="chip-query">What if the fee was 3%?</span>
+          <span class="chip-hint">See the cost difference of a higher fee tier, like EMI or corporate cards</span>
+        </button>
+        <button class="suggestion-chip" data-q="If I make ₹80,000 in sales today with my usual refund rate, what would I actually receive?" title="Estimate a future settlement based on your typical rates">
+          <span class="chip-query">What would ₹80,000 look like?</span>
+          <span class="chip-hint">Estimate a future settlement based on your typical rates</span>
+        </button>
+      </div>
+    </div>
+
+    <div id="waterfallCard" class="waterfall-card">
+      <div class="empty-state">Pick a settlement above and ask a question to see the breakdown.</div>
+    </div>
+
+    <div id="insightsCallout" class="insights-callout" style="display:none;"></div>
+
+    <div id="narrationCard" class="narration-card" style="display:none;">
+      <p id="narrationHeadline" class="narration-headline"></p>
+      <p id="narrationBody" class="narration-body"></p>
+      <button id="exportBtn" class="export-btn" style="display:none;">Export Summary</button>
+    </div>
+  </div>
+
+  <!-- COMPARE VIEW -->
+  <div id="compareView" style="display:none;">
+    <div class="compare-intro">
+      Compare two settlements side by side to understand what actually changed between them — useful when one payout looks off compared to a normal day.
+    </div>
+    <div class="compare-controls">
+      <div class="compare-select-group">
+        <label for="compareSelectA">Settlement A</label>
+        <select id="compareSelectA" class="compare-select"></select>
+      </div>
+      <div class="compare-vs">vs</div>
+      <div class="compare-select-group">
+        <label for="compareSelectB">Settlement B</label>
+        <select id="compareSelectB" class="compare-select"></select>
+      </div>
+      <button id="compareBtn" class="compare-run-btn">Compare</button>
+    </div>
+
+    <div id="compareNoteCard" class="compare-note-card" style="display:none;">
+      <div class="compare-note-label">⚡ Biggest Driver</div>
+      <div id="compareNoteText" class="compare-note-text"></div>
+    </div>
+
+    <div id="compareGrid" class="compare-grid" style="display:none;">
+      <div class="compare-col">
+        <div id="compareTitleA" class="compare-col-title">Settlement A</div>
+        <div id="compareWaterfallA" class="waterfall-card compare-card"></div>
+      </div>
+      <div class="compare-col">
+        <div id="compareTitleB" class="compare-col-title">Settlement B</div>
+        <div id="compareWaterfallB" class="waterfall-card compare-card"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footnote">Waterfall math runs entirely in <code>compute_waterfall()</code> on the server — this page only renders what it returns.</div>
+</div>
+
+<script>
+  // API_BASE reads window.API_BASE_URL (configured in <head> or at runtime)
+  // Defaults to empty string (same-origin), ensuring local dev (./run.sh) continues working unchanged.
+  const API_BASE = (window.API_BASE_URL || '').replace(/\/+$/, '');
+
+  // ---- Offline fallback data (mirrors seed_data.json exactly) ----
+  // Used ONLY if the live API can't be reached, so this page is still
+  // demoable standalone. The math below is a byte-for-byte mirror of
+  // waterfall_core.py's rounding, not an approximation.
+  const OFFLINE_BATCHES = [
+    { id: "batch-001", label: "Primary demo batch", date: "2026-08-20", gross_amount: 50000.0, gateway_fee_pct: 0.02, gst_on_fee_pct: 0.18, refunds_amount: 800.0, chargebacks_reserve_pct: 0.015 },
+    { id: "batch-002", label: "Refund-heavy day", date: "2026-08-21", gross_amount: 75000.0, gateway_fee_pct: 0.02, gst_on_fee_pct: 0.18, refunds_amount: 5000.0, chargebacks_reserve_pct: 0.02 },
+    { id: "batch-003", label: "Premium/EMI-heavy day", date: "2026-08-22", gross_amount: 100000.0, gateway_fee_pct: 0.03, gst_on_fee_pct: 0.18, refunds_amount: 2000.0, chargebacks_reserve_pct: 0.025 },
+    { id: "batch-004", label: "Edge case", date: "2026-08-23", gross_amount: 20000.0, gateway_fee_pct: 0.02, gst_on_fee_pct: 0.18, refunds_amount: 0.0, chargebacks_reserve_pct: 0.0 },
+    { id: "batch-005", label: "Typical day 1", date: "2026-08-24", gross_amount: 60000.0, gateway_fee_pct: 0.02, gst_on_fee_pct: 0.18, refunds_amount: 1200.0, chargebacks_reserve_pct: 0.015 },
+    { id: "batch-006", label: "Typical day 2", date: "2026-08-25", gross_amount: 55000.0, gateway_fee_pct: 0.02, gst_on_fee_pct: 0.18, refunds_amount: 950.0, chargebacks_reserve_pct: 0.015 },
+    { id: "batch-007", label: "High-risk batch", date: "2026-08-26", gross_amount: 80000.0, gateway_fee_pct: 0.025, gst_on_fee_pct: 0.18, refunds_amount: 3200.0, chargebacks_reserve_pct: 0.035 },
+    { id: "batch-008", label: "Low-refund day", date: "2026-08-27", gross_amount: 45000.0, gateway_fee_pct: 0.02, gst_on_fee_pct: 0.18, refunds_amount: 300.0, chargebacks_reserve_pct: 0.015 },
+    { id: "batch-009", label: "High volume day", date: "2026-08-28", gross_amount: 120000.0, gateway_fee_pct: 0.02, gst_on_fee_pct: 0.18, refunds_amount: 1500.0, chargebacks_reserve_pct: 0.015 },
+    { id: "batch-010", label: "Mixed portfolio", date: "2026-08-29", gross_amount: 90000.0, gateway_fee_pct: 0.022, gst_on_fee_pct: 0.18, refunds_amount: 2000.0, chargebacks_reserve_pct: 0.018 },
+    { id: "batch-011", label: "Mixed transactions: card (2%) + EMI (3%) blended to 2.4%", date: "2026-08-30", gross_amount: 65000.0, gateway_fee_pct: 0.024, gst_on_fee_pct: 0.18, refunds_amount: 1200.0, chargebacks_reserve_pct: 0.016 },
+    { id: "batch-012", label: "Mixed transactions: card (2%) + netbanking (2%) + EMI (3%) blended to 2.2%", date: "2026-08-31", gross_amount: 55000.0, gateway_fee_pct: 0.022, gst_on_fee_pct: 0.18, refunds_amount: 900.0, chargebacks_reserve_pct: 0.02 }
+  ];
+
+  function round2(n) { return Math.round((n + Number.EPSILON) * 100) / 100; }
+
+  function computeWaterfallOffline(b) {
+    const gateway_fee = round2(b.gross_amount * b.gateway_fee_pct);
+    const gst_on_fee = round2(gateway_fee * b.gst_on_fee_pct);
+    const after_fees = round2(b.gross_amount - gateway_fee - gst_on_fee);
+    const after_refunds = round2(after_fees - b.refunds_amount);
+    const reserve_held = round2(after_refunds * b.chargebacks_reserve_pct);
+    const net_settled = round2(after_refunds - reserve_held);
+    return { gross: b.gross_amount, gateway_fee, gst_on_fee, refunds: b.refunds_amount, reserve_held, net_settled };
+  }
+
+  function parseFollowupOffline(question, batch) {
+    const q = question.toLowerCase();
+    if (!q.includes('what if')) return { batch: null, note: null };
+    const fieldMap = [
+      ['gateway fee', 'gateway_fee_pct'], ['fee', 'gateway_fee_pct'],
+      ['refund', 'refunds_amount'], ['reserve', 'chargebacks_reserve_pct'], ['gst', 'gst_on_fee_pct']
+    ];
+    let field = null;
+    for (const [alias, f] of fieldMap) { if (q.includes(alias)) { field = f; break; } }
+    if (!field) return { batch: null, note: null };
+
+    const mult = { double: 2, doubled: 2, triple: 3, tripled: 3, halve: 0.5, halved: 0.5, half: 0.5 };
+    for (const word in mult) {
+      if (new RegExp(`\\b${word}\\b`).test(q)) {
+        const current = batch[field];
+        const newVal = round2(current * mult[word]);
+        const modified = { ...batch, [field]: newVal };
+        return { batch: modified, note: `${field.replace(/_pct|_amount/, '').replace('_',' ')} ${word} (from ${current} to ${newVal})` };
+      }
+    }
+    const pctMatch = q.match(/(\d+(?:\.\d+)?)\s*%/);
+    if (pctMatch && field.endsWith('_pct')) {
+      const newVal = round2(parseFloat(pctMatch[1]) / 100 * 100) / 100;
+      const current = batch[field];
+      const modified = { ...batch, [field]: parseFloat(pctMatch[1]) / 100 };
+      return { batch: modified, note: `${field.replace('_pct','').replace('_',' ')} changed from ${current} to ${modified[field]}` };
+    }
+    const amtMatch = q.match(/(?:₹|rs\.?|rupees)?\s*(\d[\d,]*(?:\.\d+)?)/);
+    if (amtMatch && field.endsWith('_amount')) {
+      const newVal = round2(parseFloat(amtMatch[1].replace(/,/g, '')));
+      const current = batch[field];
+      const modified = { ...batch, [field]: newVal };
+      return { batch: modified, note: `${field.replace('_amount','')} changed from ${current} to ${newVal}` };
+    }
+    return { batch: null, note: null };
+  }
+
+  function narrateOffline(batch, result, note) {
+    const inr = (n) => `₹${Math.abs(n).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+    let headline = note
+      ? `Here's what your settlement would look like if ${note}:`
+      : `Your settlement of ${inr(result.gross)} on ${batch.date} came in at ${inr(result.net_settled)} after four deductions.`;
+    let body = [
+      `Gateway fee took ${inr(result.gateway_fee)} (${(batch.gateway_fee_pct*100).toFixed(1)}% of the gross amount) — the fee the payment processor charges for handling the transaction — this is standard on every online payment, not specific to you.`,
+      `GST on that fee added another ${inr(result.gst_on_fee)} (${(batch.gst_on_fee_pct*100).toFixed(0)}% of the fee, not the gross) — India's tax, but applied only to the fee itself, not your full sale — this trips people up because it's easy to assume tax applies to the whole amount.`,
+      result.refunds > 0 ? `Refunds processed this period totaled ${inr(result.refunds)} — money already sent back to customers this period — it's subtracted because it's no longer money you're owed.` : 'No refunds were processed this period (money already sent back to customers — subtracted only when returns occur).',
+      result.reserve_held > 0 ? `A rolling chargeback reserve held back ${inr(result.reserve_held)} (${(batch.chargebacks_reserve_pct*100).toFixed(2)}% of what remained after fees and refunds) — a portion held back temporarily as a safety net in case a customer disputes a charge with their bank later — it's not lost, it's released back to you eventually, just not in this settlement.` : 'No chargeback reserve was held back this period (a portion held back temporarily as a safety net in case a customer disputes a charge with their bank later — released back over time).',
+      `That leaves a net settled amount of ${inr(result.net_settled)}.`
+    ].join(' ');
+    return { headline, body };
+  }
+
+  // ---- State ----
+  let batches = [];
+  let offlineMode = false;
+  let selectedBatchId = null;
+  let currentWaterfall = null;
+  let currentQuestion = null;
+  let isProjection = false;
+
+  const batchRow = document.getElementById('batchRow');
+  const questionInput = document.getElementById('question');
+  const askBtn = document.getElementById('askBtn');
+  const waterfallCard = document.getElementById('waterfallCard');
+  const narrationCard = document.getElementById('narrationCard');
+  const narrationHeadline = document.getElementById('narrationHeadline');
+  const narrationBody = document.getElementById('narrationBody');
+  const insightsCallout = document.getElementById('insightsCallout');
+  const exportBtn = document.getElementById('exportBtn');
+  const banner = document.getElementById('banner');
+
+  function inrShort(n) {
+    return `₹${Math.abs(n).toLocaleString('en-IN', {maximumFractionDigits:0})}`;
+  }
+
+  async function loadBatches() {
+    try {
+      const res = await fetch(`${API_BASE}/batches`);
+      if (!res.ok) throw new Error('bad status');
+      batches = await res.json();
+      offlineMode = false;
+      banner.classList.remove('show');
+    } catch (e) {
+      batches = OFFLINE_BATCHES.map(b => ({ id: b.id, label: b.label, date: b.date, gross_amount: b.gross_amount }));
+      offlineMode = true;
+      banner.classList.add('show');
+    }
+    renderBatchRow();
+    populateCompareDropdowns();
+    if (batches.length) selectBatch(batches[0].id);
+  }
+
+  function renderBatchRow() {
+    batchRow.innerHTML = '';
+    batches.forEach(b => {
+      const chip = document.createElement('button');
+      chip.className = 'batch-chip' + (b.id === selectedBatchId ? ' active' : '');
+      chip.innerHTML = `${b.label.split(' -- ')[0]} <span class="amt">${inrShort(b.gross_amount)}</span>`;
+      chip.onclick = () => selectBatch(b.id);
+      batchRow.appendChild(chip);
+    });
+  }
+
+  function selectBatch(id) {
+    selectedBatchId = id;
+    renderBatchRow();
+    insightsCallout.style.display = 'none';
+    if (!id || !id.startsWith('pdf-')) {
+      extractedFieldsCard.style.display = 'none';
+    } else {
+      extractedFieldsCard.style.display = 'block';
+    }
+  }
+
+  async function fetchInsights(batchId) {
+    if (offlineMode || !batchId || batchId === 'projection') return null;
+    try {
+      const res = await fetch(`${API_BASE}/insights/${batchId}`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data.insight;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function renderInsights(insight) {
+    if (!insight) {
+      insightsCallout.style.display = 'none';
+      return;
+    }
+    const isWarning = insight.includes('notably') || insight.includes('about') && insight.includes('x');
+    insightsCallout.textContent = insight;
+    insightsCallout.className = 'insights-callout' + (isWarning ? ' warning' : '');
+    insightsCallout.style.display = 'block';
+  }
+
+  function generateExportText(question, waterfall) {
+    const inr = (n) => `₹${Math.abs(n).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+    const lines = [
+      '# Settlement Breakdown Export',
+      '',
+      `**Question:** ${question}`,
+      '',
+      '## Waterfall',
+      `- Gross: ${inr(waterfall.gross)}`,
+      `- Gateway Fee: −${inr(waterfall.gateway_fee)}`,
+      `- GST on Fee: −${inr(waterfall.gst_on_fee)}`,
+      `- Refunds: −${inr(waterfall.refunds)}`,
+      `- Reserve Held: −${inr(waterfall.reserve_held)}`,
+      '',
+      `**Net Settled: ${inr(waterfall.net_settled)}**`,
+      '',
+      `Exported: ${new Date().toLocaleString()}`
+    ];
+    return lines.join('\n');
+  }
+
+  function downloadExport(text, filename) {
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  exportBtn.addEventListener('click', () => {
+    if (!currentWaterfall || !currentQuestion) return;
+    const text = generateExportText(currentQuestion, currentWaterfall);
+    const timestamp = new Date().toISOString().split('T')[0];
+    downloadExport(text, `settlement-export-${timestamp}.txt`);
+  });
+
+  function inrFull(n) {
+    return `₹${n.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+  }
+
+  function renderWaterfall(inputs, result, isHypothetical, targetElement) {
+    const container = targetElement || waterfallCard;
+    const gross = result.gross;
+    
+    // Build formula strings only if inputs object is available
+    const getFormula = (item) => {
+      if (!inputs) return null;
+      switch (item) {
+        case 'gateway_fee':
+          return `${inputs.gross_amount.toLocaleString('en-IN')} × ${(inputs.gateway_fee_pct * 100).toFixed(1)}%`;
+        case 'gst_on_fee':
+          return `${result.gateway_fee.toFixed(2)} × ${(inputs.gst_on_fee_pct * 100).toFixed(1)}%`;
+        case 'refunds':
+          return (inputs.refunds_amount !== undefined && inputs.refunds_amount !== null) ? `${inputs.refunds_amount.toFixed(2)}` : null;
+        case 'reserve_held':
+          const afterRefunds = result.gross - result.gateway_fee - result.gst_on_fee - result.refunds;
+          return `${afterRefunds.toFixed(2)} × ${(inputs.chargebacks_reserve_pct * 100).toFixed(2).replace(/0$/, '')}%`;
+        default:
+          return null;
+      }
+    };
+    
+    const rows = [
+      { label: 'Gross', value: gross, type: 'gross', key: 'gross' },
+      { label: 'Gateway fee', value: -result.gateway_fee, type: 'coral', key: 'gateway_fee' },
+      { label: 'GST on fee', value: -result.gst_on_fee, type: 'coral', key: 'gst_on_fee' },
+      { label: 'Refunds', value: -result.refunds, type: 'coral', key: 'refunds' },
+      { label: 'Reserve held', value: -result.reserve_held, type: 'coral', key: 'reserve_held' },
+    ];
+
+    let html = '';
+    if (isHypothetical) {
+      html += `<div class="hypo-badge">Live follow-up</div>`;
+    }
+
+    rows.forEach((row, i) => {
+      const widthPct = Math.max(2, Math.min(100, (Math.abs(row.value) / gross) * 100));
+      const isDeduction = row.type === 'coral';
+      const figureClass = isDeduction ? 'deduction' : 'gross';
+      const sign = isDeduction ? '−' : '';
+      const fillClass = isDeduction ? 'coral-fill' : 'gross-fill';
+      const formula = getFormula(row.key);
+      const bandClass = formula ? 'band-clickable' : '';
+      
+      html += `
+        <div class="band animate ${bandClass}" style="animation-delay:${i * 130}ms" data-band-index="${i}">
+          <div class="band-label-row">
+            <span class="band-label">${row.label}</span>
+            <span class="band-figure ${figureClass}">${sign}${inrFull(Math.abs(row.value))}</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill ${fillClass}" style="width:${widthPct}%"></div></div>
+          ${formula ? `<div class="formula-row"><span class="formula-operator">=</span> ${formula}</div>` : ''}
+        </div>`;
+    });
+
+    const netWidthPct = Math.max(2, Math.min(100, (result.net_settled / gross) * 100));
+    html += `
+      <div class="band net-band animate" style="animation-delay:${rows.length * 130}ms">
+        <div class="net-label">Net settled</div>
+        <div class="net-figure">${inrFull(result.net_settled)}</div>
+        <div class="bar-track"><div class="bar-fill gold-fill" style="width:${netWidthPct}%"></div></div>
+      </div>`;
+
+    container.innerHTML = html;
+    
+    // Add click handlers for formula toggling
+    container.querySelectorAll('.band-clickable').forEach(band => {
+      band.addEventListener('click', () => {
+        const formula = band.querySelector('.formula-row');
+        if (formula) {
+          formula.classList.toggle('visible');
+        }
+      });
+    });
+  }
+
+  function renderWaterfallSkeleton(container) {
+    const target = container || waterfallCard;
+    let html = '<div class="waterfall-skeleton">';
+    for (let i = 0; i < 5; i++) {
+      html += `
+        <div class="skeleton-band">
+          <div class="skeleton-label"></div>
+          <div class="skeleton-bar"></div>
+          <div class="skeleton-amount"></div>
+        </div>`;
+    }
+    html += `<div class="skeleton-band" style="margin-top:12px;">
+      <div class="skeleton-label"></div>
+      <div style="flex:1;"></div>
+      <div class="skeleton-amount"></div>
+    </div></div>`;
+    target.innerHTML = html;
+  }
+
+  async function ask(question) {
+    const qClean = (question || '').trim().replace(/^["'`“”‘’]+|["'`“”‘’]+$/g, '').trim();
+    if (!qClean) return;
+
+    renderWaterfallSkeleton();
+    narrationCard.style.display = 'none';
+    insightsCallout.style.display = 'none';
+    if (!selectedBatchId || !selectedBatchId.startsWith('pdf-')) {
+      extractedFieldsCard.style.display = 'none';
+    }
+    askBtn.disabled = true;
+    askBtn.textContent = 'Thinking...';
+
+    try {
+      if (!offlineMode) {
+        const payload = { question: qClean, batch_id: selectedBatchId };
+        const res = await fetch(`${API_BASE}/ask`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || 'Request failed');
+        }
+        const data = await res.json();
+        currentWaterfall = data.waterfall;
+        currentQuestion = data.question;
+        renderWaterfall(data.inputs, data.waterfall, data.is_hypothetical);
+        
+        if (!data.is_hypothetical) {
+          const insight = await fetchInsights(selectedBatchId);
+          renderInsights(insight);
+        } else {
+          insightsCallout.style.display = 'none';
+        }
+
+        narrationHeadline.textContent = data.narration.split(/(?<=[.:])\s/)[0];
+        narrationBody.textContent = data.narration.split(/(?<=[.:])\s/).slice(1).join(' ');
+      } else {
+        const { modified, note } = parseFollowupOffline(question);
+        let batchToCompute;
+        
+        if (question.toLowerCase().includes('what would') && question.includes('80,000')) {
+          const avgRefundPct = 0.02;
+          const projGross = 80000;
+          batchToCompute = {
+            id: 'projection',
+            label: 'Hypothetical: ₹80,000 sales day',
+            date: new Date().toISOString().split('T')[0],
+            gross_amount: projGross,
+            gateway_fee_pct: 0.02,
+            gst_on_fee_pct: 0.18,
+            refunds_amount: +(projGross * avgRefundPct).toFixed(2),
+            chargebacks_reserve_pct: 0.015
+          };
+        } else {
+          const base = OFFLINE_BATCHES.find(b => b.id === selectedBatchId) || OFFLINE_BATCHES[0];
+          batchToCompute = { ...base, ...modified };
+        }
+
+        const result = computeWaterfallOffline(batchToCompute);
+        currentWaterfall = result;
+        currentQuestion = question;
+        
+        const offlineInputs = {
+          gross_amount: batchToCompute.gross_amount,
+          gateway_fee_pct: batchToCompute.gateway_fee_pct,
+          gst_on_fee_pct: batchToCompute.gst_on_fee_pct,
+          refunds_amount: batchToCompute.refunds_amount,
+          chargebacks_reserve_pct: batchToCompute.chargebacks_reserve_pct,
+        };
+        renderWaterfall(offlineInputs, result, !!modified);
+        insightsCallout.style.display = 'none';
+        
+        const { headline, body } = narrateOffline(batchToCompute, result, note);
+        narrationHeadline.textContent = headline;
+        narrationBody.textContent = body;
+      }
+      narrationCard.style.display = 'block';
+      exportBtn.style.display = 'block';
+    } catch (e) {
+      waterfallCard.innerHTML = `<div class="empty-state">Error: ${e.message}</div>`;
+      narrationCard.style.display = 'none';
+      insightsCallout.style.display = 'none';
+    } finally {
+      askBtn.disabled = false;
+      askBtn.textContent = 'Ask';
+    }
+  }
+
+  askBtn.addEventListener('click', () => {
+    const q = questionInput.value.trim().replace(/^["'`“”‘’]+|["'`“”‘’]+$/g, '').trim();
+    if (q) ask(q);
+  });
+
+  questionInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') askBtn.click();
+  });
+
+  document.querySelectorAll('.suggestion-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      questionInput.value = chip.dataset.q;
+      askBtn.click();
+    });
+  });
+
+  // ========== VIEW SWITCHING & COMPARE LOGIC ==========
+  const tabAsk = document.getElementById('tabAsk');
+  const tabCompare = document.getElementById('tabCompare');
+  const askView = document.getElementById('askView');
+  const compareView = document.getElementById('compareView');
+  const compareSelectA = document.getElementById('compareSelectA');
+  const compareSelectB = document.getElementById('compareSelectB');
+  const compareBtn = document.getElementById('compareBtn');
+  const compareNoteCard = document.getElementById('compareNoteCard');
+  const compareNoteText = document.getElementById('compareNoteText');
+  const compareGrid = document.getElementById('compareGrid');
+  const compareTitleA = document.getElementById('compareTitleA');
+  const compareTitleB = document.getElementById('compareTitleB');
+  const compareWaterfallA = document.getElementById('compareWaterfallA');
+  const compareWaterfallB = document.getElementById('compareWaterfallB');
+
+  tabAsk.addEventListener('click', () => {
+    tabAsk.classList.add('active');
+    tabCompare.classList.remove('active');
+    askView.style.display = 'block';
+    compareView.style.display = 'none';
+  });
+
+  tabCompare.addEventListener('click', () => {
+    tabCompare.classList.add('active');
+    tabAsk.classList.remove('active');
+    askView.style.display = 'none';
+    compareView.style.display = 'block';
+    if (!compareWaterfallA.children.length) {
+      runCompare();
+    }
+  });
+
+  function populateCompareDropdowns() {
+    compareSelectA.innerHTML = '';
+    compareSelectB.innerHTML = '';
+    batches.forEach((b) => {
+      const optA = document.createElement('option');
+      optA.value = b.id;
+      optA.textContent = `${b.id} (${b.label.split(' -- ')[0]} - ${inrShort(b.gross_amount)})`;
+      compareSelectA.appendChild(optA);
+
+      const optB = document.createElement('option');
+      optB.value = b.id;
+      optB.textContent = `${b.id} (${b.label.split(' -- ')[0]} - ${inrShort(b.gross_amount)})`;
+      compareSelectB.appendChild(optB);
+    });
+    if (batches.length >= 2) {
+      compareSelectA.selectedIndex = 0;
+      compareSelectB.selectedIndex = 1;
+    }
+  }
+
+  async function runCompare() {
+    const idA = compareSelectA.value;
+    const idB = compareSelectB.value;
+    if (!idA || !idB) return;
+
+    compareBtn.disabled = true;
+    compareBtn.textContent = 'Comparing...';
+    renderWaterfallSkeleton(compareWaterfallA);
+    renderWaterfallSkeleton(compareWaterfallB);
+
+    try {
+      if (!offlineMode) {
+        const res = await fetch(`${API_BASE}/compare?batch_id_a=${idA}&batch_id_b=${idB}`);
+        if (!res.ok) throw new Error('Failed to fetch comparison');
+        const data = await res.json();
+        
+        compareNoteText.textContent = data.comparison_note;
+        compareNoteCard.style.display = 'block';
+
+        const labelA = batches.find(b => b.id === idA)?.label || idA;
+        const labelB = batches.find(b => b.id === idB)?.label || idB;
+        compareTitleA.textContent = `${idA}: ${labelA.split(' -- ')[0]}`;
+        compareTitleB.textContent = `${idB}: ${labelB.split(' -- ')[0]}`;
+
+        renderWaterfall(data.batch_a.inputs, data.batch_a.waterfall, false, compareWaterfallA);
+        renderWaterfall(data.batch_b.inputs, data.batch_b.waterfall, false, compareWaterfallB);
+        compareGrid.style.display = 'grid';
+      } else {
+        const batchA = OFFLINE_BATCHES.find(b => b.id === idA) || OFFLINE_BATCHES[0];
+        const batchB = OFFLINE_BATCHES.find(b => b.id === idB) || OFFLINE_BATCHES[1];
+        
+        const resA = computeWaterfallOffline(batchA);
+        const resB = computeWaterfallOffline(batchB);
+
+        const diffs = {
+          'Gateway Fee': Math.abs(resA.gateway_fee - resB.gateway_fee),
+          'GST on Fee': Math.abs(resA.gst_on_fee - resB.gst_on_fee),
+          'Refunds': Math.abs(resA.refunds - resB.refunds),
+          'Reserve Held': Math.abs(resA.reserve_held - resB.reserve_held),
+        };
+        const maxKey = Object.keys(diffs).reduce((a, b) => diffs[a] > diffs[b] ? a : b);
+        const diffVal = diffs[maxKey];
+        const note = `The biggest difference: ${maxKey} had a ₹${diffVal.toFixed(2)} swing between ${idA} and ${idB}.`;
+
+        compareNoteText.textContent = note;
+        compareNoteCard.style.display = 'block';
+
+        compareTitleA.textContent = `${idA}: ${batchA.label}`;
+        compareTitleB.textContent = `${idB}: ${batchB.label}`;
+
+        renderWaterfall(batchA, resA, false, compareWaterfallA);
+        renderWaterfall(batchB, resB, false, compareWaterfallB);
+        compareGrid.style.display = 'grid';
+      }
+    } catch (err) {
+      compareNoteText.textContent = `Comparison Error: ${err.message}`;
+      compareNoteCard.style.display = 'block';
+    } finally {
+      compareBtn.disabled = false;
+      compareBtn.textContent = 'Compare';
+    }
+  }
+
+  compareBtn.addEventListener('click', runCompare);
+  compareSelectA.addEventListener('change', runCompare);
+  compareSelectB.addEventListener('change', runCompare);
+
+  // ========== PDF UPLOAD HANDLER ==========
+  const pdfUploadInput = document.getElementById('pdfUploadInput');
+  const extractedFieldsCard = document.getElementById('extractedFieldsCard');
+  const extractedFilename = document.getElementById('extractedFilename');
+  const uploadSummaryBanner = document.getElementById('uploadSummaryBanner');
+  const extractedFieldsGrid = document.getElementById('extractedFieldsGrid');
+
+  pdfUploadInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    renderWaterfallSkeleton();
+    narrationCard.style.display = 'none';
+    insightsCallout.style.display = 'none';
+    extractedFieldsCard.style.display = 'none';
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch(`${API_BASE}/upload`, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || 'Upload failed');
+      }
+
+      const payload = await res.json();
+      currentWaterfall = payload.waterfall;
+      currentQuestion = payload.question;
+
+      // Render plain-language summary first, then extracted fields
+      extractedFilename.textContent = file.name;
+      const ef = payload.extracted_fields;
+      const summaryText = payload.document_summary || (ef && ef.document_summary);
+      if (summaryText) {
+        uploadSummaryBanner.textContent = summaryText;
+        uploadSummaryBanner.style.display = 'block';
+      } else {
+        uploadSummaryBanner.style.display = 'none';
+      }
+
+      extractedFieldsGrid.innerHTML = `
+        <div class="extracted-item"><div class="k">Statement Date</div><div class="v">${ef.statement_date || 'N/A'}</div></div>
+        <div class="extracted-item"><div class="k">Gross Sales</div><div class="v">₹${ef.gross_amount.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></div>
+        <div class="extracted-item"><div class="k">Fee Rate</div><div class="v">${(ef.gateway_fee_pct * 100).toFixed(1)}%</div></div>
+        <div class="extracted-item"><div class="k">GST on Fee</div><div class="v">${(ef.gst_on_fee_pct * 100).toFixed(0)}%</div></div>
+        <div class="extracted-item"><div class="k">Refunds</div><div class="v">₹${ef.refunds_amount.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div></div>
+        <div class="extracted-item"><div class="k">Reserve Rate</div><div class="v">${(ef.chargebacks_reserve_pct * 100).toFixed(2)}%</div></div>
+        <div class="extracted-item"><div class="k">Txns / Refunds</div><div class="v">${ef.transactions_count} / ${ef.refunds_count}</div></div>
+      `;
+      extractedFieldsCard.style.display = 'block';
+
+      // Render waterfall using the exact same locked render function
+      renderWaterfall(payload.inputs, payload.waterfall, false);
+
+      narrationHeadline.textContent = payload.narration.split(/(?<=[.:])\s/)[0];
+      narrationBody.textContent = payload.narration.split(/(?<=[.:])\s/).slice(1).join(' ');
+      narrationCard.style.display = 'block';
+      exportBtn.style.display = 'block';
+
+      // Add or update uploaded batch in batches list and retain as active selection
+      const uploadedBatch = {
+        id: payload.batch_id,
+        label: `📄 ${file.name} -- Uploaded Statement`,
+        date: ef.statement_date || new Date().toISOString().split('T')[0],
+        gross_amount: ef.gross_amount,
+        gateway_fee_pct: ef.gateway_fee_pct,
+        gst_on_fee_pct: ef.gst_on_fee_pct,
+        refunds_amount: ef.refunds_amount,
+        chargebacks_reserve_pct: ef.chargebacks_reserve_pct
+      };
+
+      const existingIdx = batches.findIndex(b => b.id === payload.batch_id);
+      if (existingIdx !== -1) {
+        batches[existingIdx] = uploadedBatch;
+      } else {
+        batches.unshift(uploadedBatch);
+      }
+
+      selectedBatchId = payload.batch_id;
+      renderBatchRow();
+      populateCompareDropdowns();
+    } catch (err) {
+      waterfallCard.innerHTML = `<div class="empty-state">Upload Error: ${err.message}</div>`;
+    } finally {
+      pdfUploadInput.value = '';
+    }
+  });
+
+  loadBatches();
+</script>
+
+</body>
+</html>

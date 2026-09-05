@@ -1,0 +1,98 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 1158 >>
+stream
+BT
+/F1 9 Tf
+15 TL
+40 780 Td
+ET
+BT
+/F2 16 Tf
+22 TL
+(RAZORPAY MERCHANT SETTLEMENT STATEMENT) Tj T*
+ET
+BT
+/F1 9 Tf
+15 TL
+(Entity: QuickBite Logistics Pvt Ltd | Merchant ID: MID88301QB) Tj T*
+(Statement Period: 30 Aug 2026 | Hub Code: BLR-KORAMANGALA-04) Tj T*
+() Tj T*
+(Operational Note: Peak Hour Surge Volume accounted for 34% of captures.) Tj T*
+() Tj T*
+ET
+BT
+/F2 14 Tf
+18 TL
+(CHARGES SUMMARY) Tj T*
+ET
+BT
+/F1 9 Tf
+15 TL
+(Payment Gateway Fee: 2.40% blended rate across card/UPI/wallet transactions) Tj T*
+(Applicable GST: 18% on gateway fee) Tj T*
+(Rolling Reserve: 1.80% dispute retention fund) Tj T*
+() Tj T*
+ET
+BT
+/F2 14 Tf
+18 TL
+(TRANSACTION DETAILS) Tj T*
+ET
+BT
+/F1 9 Tf
+15 TL
+(TXN7031 19:40 UPI 1,240.00) Tj T*
+(TXN7032 11:05 Wallet 680.00) Tj T*
+(TXN7033 13:15 UPI 2,450.00) Tj T*
+(TXN7034 14:50 Card 3,120.00) Tj T*
+(TXN7035 09:20 UPI 850.00) Tj T*
+(TXN7036 21:10 UPI 1,890.00) Tj T*
+(TXN7037 22:30 Card 4,270.00) Tj T*
+() Tj T*
+ET
+BT
+/F2 14 Tf
+18 TL
+(REFUNDS PROCESSED) Tj T*
+ET
+BT
+/F1 9 Tf
+15 TL
+(REF301 TXN7031 350.00) Tj T*
+(REF302 TXN7035 850.00) Tj T*
+() Tj T*
+(Summary: 7 transactions, 2 refunds \(1 partial, 1 full cancellation\).) Tj T*
+ET
+
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000251 00000 n 
+0000001461 00000 n 
+0000001531 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+1606
+%%EOF

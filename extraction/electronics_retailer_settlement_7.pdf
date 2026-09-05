@@ -1,0 +1,95 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 1160 >>
+stream
+BT
+/F1 9 Tf
+15 TL
+40 780 Td
+ET
+BT
+/F2 16 Tf
+22 TL
+(RAZORPAY MERCHANT SETTLEMENT STATEMENT) Tj T*
+ET
+BT
+/F1 9 Tf
+15 TL
+(Merchant Name: ElectroHub Retail India Pvt Ltd | Merchant ID: MID99104EH) Tj T*
+(Statement Period: 01 Sep 2026 | Currency: INR | Settlement Ref: SETT-20260901-EH04) Tj T*
+() Tj T*
+ET
+BT
+/F2 14 Tf
+18 TL
+(CHARGES SUMMARY) Tj T*
+ET
+BT
+/F1 9 Tf
+15 TL
+(Payment Gateway Fee: 2.20% blended rate \(Cards and No-Cost EMI\)) Tj T*
+(Applicable GST: 18% on gateway fee) Tj T*
+(Rolling Reserve: 2.00% consumer electronics high-ticket dispute buffer) Tj T*
+() Tj T*
+ET
+BT
+/F2 14 Tf
+18 TL
+(TRANSACTION DETAILS) Tj T*
+ET
+BT
+/F1 9 Tf
+15 TL
+(TXN8001 10:15 Card 42,999.00) Tj T*
+(TXN8002 11:40 EMI 14,499.00) Tj T*
+(TXN8003 14:20 Card 28,999.00) Tj T*
+(TXN8004 16:50 Netbanking 6,250.00) Tj T*
+(TXN8005 19:30 EMI 18,500.00) Tj T*
+(Total transaction volume: 5 captured records) Tj T*
+() Tj T*
+ET
+BT
+/F2 14 Tf
+18 TL
+(REFUNDS PROCESSED) Tj T*
+ET
+BT
+/F1 9 Tf
+15 TL
+(REF801 TXN8004 6,250.00) Tj T*
+(Refund reason: Customer returned mechanical keyboard within 48hr window) Tj T*
+() Tj T*
+(This is an automated settlement statement for merchant accounting.) Tj T*
+ET
+
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000251 00000 n 
+0000001463 00000 n 
+0000001533 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+1608
+%%EOF

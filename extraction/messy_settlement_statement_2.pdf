@@ -1,0 +1,53 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 691 >>
+stream
+BT
+/F1 10 Tf
+20 TL
+50 750 Td
+(RAZORPAY SETTLEMENT STATEMENT) Tj T*
+(Merchant ID: MID98274XY | Statement Period: 25 Aug 2026) Tj T*
+(CHARGES AND RATES SUMMARY:) Tj T*
+(Payment Gateway Fee: 2.50% of gross value) Tj T*
+(Applicable GST: 18% on gateway fee) Tj T*
+(Rolling Reserve Rate: 2.00% withheld for dispute coverage) Tj T*
+(TRANSACTION DETAILS \(5 items\):) Tj T*
+(TXN9001 09:30 UPI 25,000.00) Tj T*
+(TXN9002 11:15 Card 15,000.00) Tj T*
+(TXN9003 14:00 Netbanking 20,000.00) Tj T*
+(TXN9004 16:45 Card 10,000.00) Tj T*
+(TXN9005 18:20 Wallet 5,000.00) Tj T*
+(REFUNDS PROCESSED \(2 items\):) Tj T*
+(REF3001 TXN9002 1,500.00) Tj T*
+(REF3002 TXN9004 1,000.00) Tj T*
+(End of statement.) Tj T*
+ET
+
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000983 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1053
+%%EOF

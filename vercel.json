@@ -1,0 +1,21 @@
+﻿{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/", "destination": "/landing/index.html" },
+    { "source": "/landing", "destination": "/landing/index.html" },
+    { "source": "/app", "destination": "/frontend/index.html" },
+    { "source": "/fonts/(.*)", "destination": "/frontend/fonts/$1" },
+    { "source": "/landing/static/(.*)", "destination": "/landing/$1" },
+    { "source": "/static/(.*)", "destination": "/frontend/$1" }
+  ],
+  "headers": [
+    {
+      "source": "/fonts/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" }
+      ]
+    }
+  ]
+}

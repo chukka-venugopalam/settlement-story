@@ -1,0 +1,93 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 1034 >>
+stream
+BT
+/F1 9 Tf
+15 TL
+40 780 Td
+ET
+BT
+/F2 16 Tf
+22 TL
+(RAZORPAY MERCHANT SETTLEMENT STATEMENT) Tj T*
+ET
+BT
+/F1 9 Tf
+15 TL
+(Account: CloudPulse Systems Pvt Ltd \(SaaS Platform\) | MID: MID77190CP) Tj T*
+(Statement Period: 29 Aug 2026 | Settlement Cycle: Daily T+2) Tj T*
+() Tj T*
+ET
+BT
+/F2 14 Tf
+18 TL
+(CHARGES AND RATES) Tj T*
+ET
+BT
+/F1 9 Tf
+15 TL
+(Payment Gateway Fee: 3.00% of gross value \(Commercial Cards/EMI tier\)) Tj T*
+(Applicable GST: 18% on gateway charges) Tj T*
+(Chargeback Reserve Rate: 2.50% withheld against recurring dispute exposure) Tj T*
+() Tj T*
+ET
+BT
+/F2 14 Tf
+18 TL
+(TRANSACTION DETAILS) Tj T*
+ET
+BT
+/F1 9 Tf
+15 TL
+(TXN6021 09:10 Card 48,500.00) Tj T*
+(TXN6022 11:35 Card 36,000.00) Tj T*
+(TXN6023 15:20 Netbanking 72,000.00) Tj T*
+(TXN6024 18:05 EMI 28,500.00) Tj T*
+() Tj T*
+ET
+BT
+/F2 14 Tf
+18 TL
+(REFUNDS PROCESSED) Tj T*
+ET
+BT
+/F1 9 Tf
+15 TL
+(REF201 TXN6022 9,000.00) Tj T*
+(Refund reason: Mid-cycle enterprise seat downsizing) Tj T*
+() Tj T*
+(Provisional statement subject to standard partner audit.) Tj T*
+ET
+
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000251 00000 n 
+0000001337 00000 n 
+0000001407 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+1482
+%%EOF

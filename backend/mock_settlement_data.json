@@ -1,0 +1,242 @@
+[
+  {
+    "id": "batch-001",
+    "label": "Primary demo batch -- matches the \u20b950,000 to \u20b947,300 example used throughout the pitch",
+    "date": "2026-08-20",
+    "input": {
+      "gross_amount": 50000.00,
+      "gateway_fee_pct": 0.02,
+      "gst_on_fee_pct": 0.18,
+      "refunds_amount": 800.00,
+      "chargebacks_reserve_pct": 0.015
+    },
+    "expected_output": {
+      "gross": 50000.00,
+      "gateway_fee": 1000.00,
+      "gst_on_fee": 180.00,
+      "refunds": 800.00,
+      "reserve_held": 720.30,
+      "net_settled": 47299.70
+    }
+  },
+  {
+    "id": "batch-002",
+    "label": "Refund-heavy day",
+    "date": "2026-08-21",
+    "input": {
+      "gross_amount": 75000.00,
+      "gateway_fee_pct": 0.02,
+      "gst_on_fee_pct": 0.18,
+      "refunds_amount": 5000.00,
+      "chargebacks_reserve_pct": 0.02
+    },
+    "expected_output": {
+      "gross": 75000.00,
+      "gateway_fee": 1500.00,
+      "gst_on_fee": 270.00,
+      "refunds": 5000.00,
+      "reserve_held": 1364.60,
+      "net_settled": 66865.40
+    }
+  },
+  {
+    "id": "batch-003",
+    "label": "Premium/EMI-heavy day -- higher fee tier",
+    "date": "2026-08-22",
+    "input": {
+      "gross_amount": 100000.00,
+      "gateway_fee_pct": 0.03,
+      "gst_on_fee_pct": 0.18,
+      "refunds_amount": 2000.00,
+      "chargebacks_reserve_pct": 0.025
+    },
+    "expected_output": {
+      "gross": 100000.00,
+      "gateway_fee": 3000.00,
+      "gst_on_fee": 540.00,
+      "refunds": 2000.00,
+      "reserve_held": 2361.50,
+      "net_settled": 92098.50
+    }
+  },
+  {
+    "id": "batch-004",
+    "label": "Edge case -- zero refunds, zero reserve",
+    "date": "2026-08-23",
+    "input": {
+      "gross_amount": 20000.00,
+      "gateway_fee_pct": 0.02,
+      "gst_on_fee_pct": 0.18,
+      "refunds_amount": 0.00,
+      "chargebacks_reserve_pct": 0.00
+    },
+    "expected_output": {
+      "gross": 20000.00,
+      "gateway_fee": 400.00,
+      "gst_on_fee": 72.00,
+      "refunds": 0.00,
+      "reserve_held": 0.00,
+      "net_settled": 19528.00
+    }
+  },
+  {
+    "id": "batch-005",
+    "label": "Typical day 1",
+    "date": "2026-08-24",
+    "input": {
+      "gross_amount": 60000.00,
+      "gateway_fee_pct": 0.02,
+      "gst_on_fee_pct": 0.18,
+      "refunds_amount": 1200.00,
+      "chargebacks_reserve_pct": 0.015
+    },
+    "expected_output": {
+      "gross": 60000.00,
+      "gateway_fee": 1200.00,
+      "gst_on_fee": 216.00,
+      "refunds": 1200.00,
+      "reserve_held": 860.76,
+      "net_settled": 56523.24
+    }
+  },
+  {
+    "id": "batch-006",
+    "label": "Typical day 2",
+    "date": "2026-08-25",
+    "input": {
+      "gross_amount": 55000.00,
+      "gateway_fee_pct": 0.02,
+      "gst_on_fee_pct": 0.18,
+      "refunds_amount": 950.00,
+      "chargebacks_reserve_pct": 0.015
+    },
+    "expected_output": {
+      "gross": 55000.00,
+      "gateway_fee": 1100.00,
+      "gst_on_fee": 198.00,
+      "refunds": 950.00,
+      "reserve_held": 791.28,
+      "net_settled": 51960.72
+    }
+  },
+  {
+    "id": "batch-007",
+    "label": "High-risk batch",
+    "date": "2026-08-26",
+    "input": {
+      "gross_amount": 80000.00,
+      "gateway_fee_pct": 0.025,
+      "gst_on_fee_pct": 0.18,
+      "refunds_amount": 3200.00,
+      "chargebacks_reserve_pct": 0.035
+    },
+    "expected_output": {
+      "gross": 80000.00,
+      "gateway_fee": 2000.00,
+      "gst_on_fee": 360.00,
+      "refunds": 3200.00,
+      "reserve_held": 2605.40,
+      "net_settled": 71834.60
+    }
+  },
+  {
+    "id": "batch-008",
+    "label": "Low-refund day",
+    "date": "2026-08-27",
+    "input": {
+      "gross_amount": 45000.00,
+      "gateway_fee_pct": 0.02,
+      "gst_on_fee_pct": 0.18,
+      "refunds_amount": 300.00,
+      "chargebacks_reserve_pct": 0.015
+    },
+    "expected_output": {
+      "gross": 45000.00,
+      "gateway_fee": 900.00,
+      "gst_on_fee": 162.00,
+      "refunds": 300.00,
+      "reserve_held": 654.57,
+      "net_settled": 42983.43
+    }
+  },
+  {
+    "id": "batch-009",
+    "label": "High volume day",
+    "date": "2026-08-28",
+    "input": {
+      "gross_amount": 120000.00,
+      "gateway_fee_pct": 0.02,
+      "gst_on_fee_pct": 0.18,
+      "refunds_amount": 1500.00,
+      "chargebacks_reserve_pct": 0.015
+    },
+    "expected_output": {
+      "gross": 120000.00,
+      "gateway_fee": 2400.00,
+      "gst_on_fee": 432.00,
+      "refunds": 1500.00,
+      "reserve_held": 1735.02,
+      "net_settled": 113932.98
+    }
+  },
+  {
+    "id": "batch-010",
+    "label": "Mixed portfolio",
+    "date": "2026-08-29",
+    "input": {
+      "gross_amount": 90000.00,
+      "gateway_fee_pct": 0.022,
+      "gst_on_fee_pct": 0.18,
+      "refunds_amount": 2000.00,
+      "chargebacks_reserve_pct": 0.018
+    },
+    "expected_output": {
+      "gross": 90000.00,
+      "gateway_fee": 1980.00,
+      "gst_on_fee": 356.40,
+      "refunds": 2000.00,
+      "reserve_held": 1541.94,
+      "net_settled": 84121.66
+    }
+  },
+  {
+    "id": "batch-011",
+    "label": "Mixed transactions: card (2%) + EMI (3%) blended to 2.4%",
+    "date": "2026-08-30",
+    "input": {
+      "gross_amount": 65000.00,
+      "gateway_fee_pct": 0.024,
+      "gst_on_fee_pct": 0.18,
+      "refunds_amount": 1200.00,
+      "chargebacks_reserve_pct": 0.016
+    },
+    "expected_output": {
+      "gross": 65000.00,
+      "gateway_fee": 1560.00,
+      "gst_on_fee": 280.80,
+      "refunds": 1200.00,
+      "reserve_held": 991.35,
+      "net_settled": 60967.85
+    }
+  },
+  {
+    "id": "batch-012",
+    "label": "Mixed transactions: card (2%) + netbanking (2%) + EMI (3%) blended to 2.2%",
+    "date": "2026-08-31",
+    "input": {
+      "gross_amount": 55000.00,
+      "gateway_fee_pct": 0.022,
+      "gst_on_fee_pct": 0.18,
+      "refunds_amount": 900.00,
+      "chargebacks_reserve_pct": 0.02
+    },
+    "expected_output": {
+      "gross": 55000.00,
+      "gateway_fee": 1210.00,
+      "gst_on_fee": 217.80,
+      "refunds": 900.00,
+      "reserve_held": 1053.44,
+      "net_settled": 51618.76
+    }
+  }
+]

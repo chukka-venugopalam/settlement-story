@@ -1,0 +1,95 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 1136 >>
+stream
+BT
+/F1 9 Tf
+15 TL
+40 780 Td
+ET
+BT
+/F2 16 Tf
+22 TL
+(RAZORPAY MERCHANT SETTLEMENT STATEMENT) Tj T*
+ET
+BT
+/F1 9 Tf
+15 TL
+(Account Name: Apex IIT-JEE Academy Pvt Ltd | Merchant ID: MID55208AA) Tj T*
+(Statement Period: 02 Sep 2026 | Currency: INR | Settlement Ref: SETT-20260902-AA08) Tj T*
+() Tj T*
+ET
+BT
+/F2 14 Tf
+18 TL
+(CHARGES SUMMARY) Tj T*
+ET
+BT
+/F1 9 Tf
+15 TL
+(Payment Gateway Fee: 1.80% special education tier processing fee) Tj T*
+(Applicable GST: 18% on gateway fee) Tj T*
+(Rolling Reserve: 1.00% dispute holdback reserve) Tj T*
+() Tj T*
+ET
+BT
+/F2 14 Tf
+18 TL
+(TRANSACTION DETAILS) Tj T*
+ET
+BT
+/F1 9 Tf
+15 TL
+(TXN9011 08:30 UPI 35,000.00) Tj T*
+(TXN9012 10:15 Netbanking 4,500.00) Tj T*
+(TXN9013 12:45 Card 85,000.00) Tj T*
+(TXN9014 15:20 UPI 12,000.00) Tj T*
+(TXN9015 17:50 UPI 3,500.00) Tj T*
+(Total transaction volume: 5 student enrollment records) Tj T*
+() Tj T*
+ET
+BT
+/F2 14 Tf
+18 TL
+(REFUNDS PROCESSED) Tj T*
+ET
+BT
+/F1 9 Tf
+15 TL
+(REF901 TXN9012 4,500.00) Tj T*
+(Refund reason: Duplicate student registration fee reversal) Tj T*
+() Tj T*
+(This is an automated settlement statement for institutional reconciliation.) Tj T*
+ET
+
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000251 00000 n 
+0000001439 00000 n 
+0000001509 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+1584
+%%EOF
